@@ -94,8 +94,7 @@ function ChatWindow({ item, conversation }) {
   const minimize = () => leave(() => dock.minimize(item.id))
 
   return (
-    // Lebar jendela dianimasikan dari/ke 0 sehingga jendela di sebelahnya ikut bergeser dengan mulus.
-    // Isi jendela tetap selebar penuh agar tidak ikut "menyempit" selama animasi.
+    // Jendela naik dari bawah layar saat dibuka dan turun saat ditutup/dikecilkan (lihat index.css).
     <section
       aria-label={`Chat dengan ${name}`}
       onAnimationEnd={onAnimationEnd}
@@ -104,7 +103,7 @@ function ChatWindow({ item, conversation }) {
       }`}
       style={{ width: WINDOW_WIDTH }}
     >
-      <div className="flex h-full flex-col" style={{ width: WINDOW_WIDTH }}>
+      <div className="flex h-full flex-col">
         <ChatThread
           conversationId={item.id}
           compact
