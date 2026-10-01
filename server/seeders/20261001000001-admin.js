@@ -5,7 +5,7 @@ const { hashPassword } = require('../helpers/bcrypt');
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface) {
-    const username = process.env.SEED_ADMIN_USERNAME || 'admin';
+    const username = (process.env.SEED_ADMIN_USERNAME || 'admin').trim().toLowerCase();
     const password = process.env.SEED_ADMIN_PASSWORD;
     if (!password || password.length < 8) {
       throw new Error('Isi SEED_ADMIN_PASSWORD (minimal 8 karakter) di .env sebelum menjalankan seeder');

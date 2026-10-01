@@ -48,6 +48,7 @@ module.exports = (sequelize, DataTypes) => {
       avatarUrl: DataTypes.STRING,
       mustChangePassword: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
       isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+      passwordChangedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
     },
     {
       sequelize,
@@ -63,9 +64,14 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
       hooks: {
+        // Username disimpan huruf kecil agar login tidak peka huruf besar/kecil.
+        beforeValidate(user) {
+          if (typeof user.username === 'string') user.username = user.username.trim().toLowerCase();
+        },
         async beforeSave(user) {
           if (user.changed('password')) {
             user.password = await hashPassword(user.password);
+            user.passwordChangedAt = new Date();
           }
         },
       },

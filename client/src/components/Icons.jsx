@@ -35,6 +35,33 @@ export function UserIcon(props) {
   )
 }
 
+export function ClassIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 8 12 4l9 4-9 4z" />
+      <path d="M7 10v5c0 1.5 2.2 3 5 3s5-1.5 5-3v-5" />
+    </svg>
+  )
+}
+
+export function ShieldIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6z" />
+    </svg>
+  )
+}
+
+export function LogoutIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3" />
+      <path d="M10 17l-5-5 5-5" />
+      <path d="M5 12h11" />
+    </svg>
+  )
+}
+
 export function SproutIcon(props) {
   return (
     <svg {...base} {...props}>

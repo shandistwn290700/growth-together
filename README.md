@@ -7,10 +7,11 @@ Platform portofolio dan perkembangan siswa SDIT, dari kelas 1 sampai lulus. Guru
 
 ## Setup
 
-1. Nyalakan PostgreSQL (PowerShell **sebagai Administrator**):
+1. Instal PostgreSQL (sekali saja). Di PowerShell:
    ```powershell
-   Start-Service postgresql-x64-18
+   winget install PostgreSQL.PostgreSQL.18
    ```
+   Atau unduh installer dari https://www.postgresql.org/download/windows/. Catat password user `postgres` yang dibuat saat instalasi.
 2. Salin `server/.env.example` menjadi `server/.env`, lalu isi `DB_PASSWORD`, `JWT_SECRET`, dan `SEED_ADMIN_PASSWORD`.
 3. Buat database, tabel, dan akun admin pertama:
    ```bash
@@ -23,10 +24,26 @@ Platform portofolio dan perkembangan siswa SDIT, dari kelas 1 sampai lulus. Guru
    cd client && npm run dev   # http://localhost:5173
    ```
 
+## Alur awal penggunaan (admin)
+
+1. Login dengan akun admin dari `.env`, lalu ganti password.
+2. **Admin → Tahun ajaran**: buat tahun ajaran (misal 2026/2027) lalu aktifkan.
+3. **Admin → Import akun dari Excel**: unduh template, isi sheet Siswa dan Guru, lalu upload.
+4. Unduh **daftar password awal** dan bagikan ke guru dan orang tua. Username orang tua adalah NIS anaknya.
+5. Setiap pengguna wajib mengganti password saat login pertama.
+
+## Kenaikan kelas
+
+1. Admin membuat tahun ajaran berikutnya dan kelas-kelasnya (menu **Kelas → Tambah kelas**).
+2. Wali kelas (atau admin) membuka kelasnya, lalu memilih untuk setiap siswa: naik kelas, tinggal kelas, lulus (kelas 6), atau pindah sekolah.
+3. Setelah semua kelas diproses, admin mengaktifkan tahun ajaran baru.
+
+Riwayat kelas lama tidak dihapus, sehingga timeline siswa tetap utuh dari kelas 1 sampai lulus.
+
 ## Tahapan
 
 - [x] Tahap 1: setup proyek, database, model
-- [ ] Tahap 2: login + panel admin (import Excel, kelas, naik kelas)
+- [x] Tahap 2: login + panel admin (import Excel, kelas, naik kelas)
 - [ ] Tahap 3: Beranda — postingan, upload foto/video, reaksi, komentar
 - [ ] Tahap 4: Profil — timeline per kelas
 - [ ] Tahap 5: Chat live terenkripsi end-to-end
