@@ -254,21 +254,21 @@ function Composer({ conversation, onSent, autoFocus }) {
 
   if (!conversation.canSend) {
     return (
-      <p className="border-t border-slate-100 px-4 py-3 text-center text-sm text-slate-500">
+      <p className="safe-bottom border-t border-slate-100 px-4 pt-3 text-center text-sm text-slate-500">
         Percakapan ini hanya bisa dibaca karena ananda sudah tidak berada di kelas tersebut.
       </p>
     )
   }
   if (!person.activeKey) {
     return (
-      <p className="border-t border-slate-100 px-4 py-3 text-center text-sm text-slate-500">
+      <p className="safe-bottom border-t border-slate-100 px-4 pt-3 text-center text-sm text-slate-500">
         {counterpartName(person)} belum mengaktifkan chat. Pesan bisa dikirim setelah beliau login ke aplikasi.
       </p>
     )
   }
 
   return (
-    <div className="border-t border-slate-100 p-2">
+    <div className="safe-bottom border-t border-slate-100 px-2 pt-2">
       {send.isError && (
         <div className="mb-2">
           <Alert>

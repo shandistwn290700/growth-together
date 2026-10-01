@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router'
 import { HomeIcon, ChatIcon, UserIcon, SproutIcon, ClassIcon, ShieldIcon, LogoutIcon } from '../components/Icons.jsx'
 import { ROLE_LABELS, useAuthActions, useMe } from '../lib/auth.js'
-import { Avatar } from '../components/ui.jsx'
+import { Avatar, Spinner } from '../components/ui.jsx'
 import AuthSplash from '../components/AuthSplash.jsx'
 import { motionDelay } from '../lib/motion.js'
 import { ChatProvider } from '../components/chat/ChatProvider.jsx'
@@ -58,16 +58,18 @@ function Layout() {
   useEffect(() => {
     window.scrollTo({ top: 0 })
   }, [pageKey])
+  // HP: saat membuka satu percakapan, chat memenuhi layar dan menu bawah disembunyikan (seperti WhatsApp).
+  const inThread = /^\/chat\/\d+/.test(pathname)
 
   return (
-    <div className="min-h-dvh pb-16 md:pb-0">
-      <header className="sticky top-0 z-30 bg-white shadow-sm">
+    <div className={`min-h-dvh md:pb-0 ${inThread ? '' : 'pb-[var(--bottom-nav)]'}`}>
+      <header className="sticky top-0 z-30 bg-white pt-[env(safe-area-inset-top)] shadow-sm">
         <div className="flex h-14 items-center justify-between gap-2 px-4">
-          <Link to="/" className="flex items-center gap-2 text-brand-700 lg:w-[280px]">
-            <span className="flex size-10 items-center justify-center rounded-full bg-brand-700 text-white">
-              <SproutIcon className="size-6" />
+          <Link to="/" className="flex min-w-0 items-center gap-2 text-brand-700 lg:w-[280px]">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-700 text-white sm:size-10">
+              <SproutIcon className="size-5 sm:size-6" />
             </span>
-            <span className="hidden text-xl font-extrabold tracking-tight sm:inline">Growth Together</span>
+            <span className="truncate text-lg font-extrabold tracking-tight sm:text-xl">Growth Together</span>
           </Link>
 
           {/* Tab tengah ala Facebook: ikon saja, garis bawah untuk tab yang aktif */}
@@ -101,15 +103,22 @@ function Layout() {
         </div>
       </header>
 
-      <main className={`mx-auto px-4 py-4 md:py-6 ${wide ? 'max-w-[1400px]' : 'max-w-5xl'}`}>
+      <main
+        className={`mx-auto md:px-4 md:py-6 ${inThread ? '' : 'px-3 py-3 sm:px-4 sm:py-4'} ${wide ? 'max-w-[1400px]' : 'max-w-5xl'}`}
+      >
         <div key={pageKey} className="animate-page-in">
-          <Outlet />
+          {/* Header dan menu tetap tampil saat halaman berikutnya sedang diunduh */}
+          <Suspense fallback={<Spinner />}>
+            <Outlet />
+          </Suspense>
         </div>
       </main>
 
       {/* Navigasi bawah untuk HP, karena kebanyakan orang tua membuka dari HP */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 grid h-16 border-t border-slate-200 bg-white md:hidden"
+        className={`fixed inset-x-0 bottom-0 z-30 h-[var(--bottom-nav)] border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden ${
+          inThread ? 'hidden' : 'grid'
+        }`}
         style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
         aria-label="Menu utama"
       >

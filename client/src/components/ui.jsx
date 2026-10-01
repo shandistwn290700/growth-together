@@ -1,7 +1,8 @@
 // Komponen UI kecil yang dipakai berulang di banyak halaman.
 
-export function Card({ className = '', children }) {
-  return <section className={`rounded-xl bg-white p-5 shadow-sm ${className}`}>{children}</section>
+// padding: class padding sendiri (misalnya "p-0" atau "px-4 pt-3"); default p-4 di HP, p-5 di layar lebar.
+export function Card({ className = '', padding = 'p-4 sm:p-5', children }) {
+  return <section className={`rounded-xl bg-white shadow-sm ${padding} ${className}`}>{children}</section>
 }
 
 const BUTTON_VARIANTS = {
@@ -19,8 +20,9 @@ export function Button({ variant = 'primary', className = '', ...props }) {
   )
 }
 
+// Huruf 16px di HP: Safari iPhone otomatis zoom halaman jika kolom input lebih kecil dari 16px.
 const FIELD_CLASS =
-  'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100'
+  'w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100 sm:py-2 sm:text-sm'
 
 export function Field({ label, hint, children }) {
   return (

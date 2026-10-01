@@ -119,6 +119,41 @@
 
 body {
   @apply bg-slate-100 text-slate-800 antialiased;
+  /* HP: hilangkan kotak biru saat mengetuk, dan cegah "tarik untuk refresh" memantul di dalam chat */
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* Tinggi menu bawah di HP, termasuk area garis "home" iPhone */
+:root {
+  --bottom-nav: calc(4rem + env(safe-area-inset-bottom));
+  --top-bar: calc(3.5rem + env(safe-area-inset-top));
+}
+
+/* Halaman Chat mengisi sisa layar (tanpa ikut menggulir halaman) */
+.chat-screen {
+  /* HP, daftar percakapan: layar - header - menu bawah - jarak atas/bawah konten */
+  height: calc(100dvh - var(--top-bar) - var(--bottom-nav) - 1.5rem);
+}
+.chat-screen[data-thread='true'] {
+  /* HP, isi percakapan: menu bawah disembunyikan, chat penuh sampai bawah */
+  height: calc(100dvh - var(--top-bar));
+}
+@media (min-width: 640px) {
+  .chat-screen {
+    height: calc(100dvh - var(--top-bar) - var(--bottom-nav) - 2rem);
+  }
+}
+@media (min-width: 768px) {
+  .chat-screen,
+  .chat-screen[data-thread='true'] {
+    height: calc(100dvh - 6.5rem);
+  }
+}
+
+/* Jarak aman di bawah kotak tulis pesan (garis "home" iPhone) */
+.safe-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
 
 /* Hormati pengaturan "kurangi gerakan" di perangkat pengguna. Durasi tetap > 0 agar

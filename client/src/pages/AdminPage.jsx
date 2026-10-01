@@ -188,13 +188,16 @@ function ImportSection() {
           if (file) upload.mutate(file)
         }}
       >
-        <input
-          ref={fileInput}
-          type="file"
-          accept=".xlsx"
-          onChange={(e) => setFile(e.target.files[0] ?? null)}
-          className="flex-1 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:font-semibold file:text-brand-700"
-        />
+        {/* Tombol pilih file sendiri (bahasa Indonesia), menggantikan "Choose File" bawaan browser */}
+        <input ref={fileInput} type="file" accept=".xlsx" hidden onChange={(e) => setFile(e.target.files[0] ?? null)} />
+        <button
+          type="button"
+          onClick={() => fileInput.current.click()}
+          className="flex min-w-0 flex-1 basis-56 items-center gap-2 rounded-lg bg-brand-50 px-3 py-2 text-left text-sm font-semibold text-brand-700 hover:bg-brand-100"
+        >
+          <span aria-hidden>📄</span>
+          <span className="truncate">{file ? file.name : 'Pilih file Excel (.xlsx)'}</span>
+        </button>
         <Button type="submit" disabled={!file || upload.isPending}>
           {upload.isPending ? 'Memproses… (bisa beberapa menit)' : 'Upload & import'}
         </Button>

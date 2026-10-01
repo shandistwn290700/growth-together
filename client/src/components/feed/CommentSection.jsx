@@ -158,21 +158,24 @@ function CommentForm({ post, students, fixedStudentId, parentId, placeholder, on
               </Select>
             </div>
           )}
-          <input
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder={placeholder ?? 'Tulis komentar…'}
-            maxLength={2000}
-            autoFocus={autoFocus}
-            className="min-w-0 flex-1 rounded-full bg-slate-100 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-100"
-          />
-          <button
-            type="submit"
-            disabled={!content.trim() || send.isPending || (needsPicker && !studentId)}
-            className="rounded-full px-3 py-2 text-sm font-bold text-brand-700 hover:bg-brand-50 disabled:text-slate-400"
-          >
-            Kirim
-          </button>
+          {/* Kolom komentar dan tombol Kirim selalu satu baris, juga di HP */}
+          <div className="flex min-w-0 flex-1 items-center gap-1">
+            <input
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder={placeholder ?? 'Tulis komentar…'}
+              maxLength={2000}
+              autoFocus={autoFocus}
+              className="min-w-0 flex-1 rounded-full bg-slate-100 px-4 py-2 text-base outline-none focus:ring-2 focus:ring-brand-100 sm:text-sm"
+            />
+            <button
+              type="submit"
+              disabled={!content.trim() || send.isPending || (needsPicker && !studentId)}
+              className="shrink-0 rounded-full px-3 py-2 text-sm font-bold text-brand-700 hover:bg-brand-50 disabled:text-slate-400"
+            >
+              Kirim
+            </button>
+          </div>
         </div>
       </div>
       {send.isError && <Alert>{getErrorMessage(send.error)}</Alert>}

@@ -59,6 +59,8 @@ const cli = (...args) =>
     password: 'password',
     port: PORT,
     persistent: false,
+    // UTF8 agar emoji di postingan/komentar tersimpan, sama seperti database produksi.
+    initdbFlags: ['--encoding=UTF8', '--no-locale'],
   });
   await pg.initialise();
   await pg.start();

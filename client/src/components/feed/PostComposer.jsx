@@ -45,7 +45,7 @@ export default function PostComposer() {
     const action =
       'flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100'
     return (
-      <Card className="px-4 pt-3 pb-1">
+      <Card padding="px-4 pt-3 pb-1">
         <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
           <Avatar name={me.displayName} src={me.avatarUrl} />
           <button
@@ -182,7 +182,7 @@ function ComposerForm({ me, initialFiles, onClose }) {
 
       {isStaff && <TagPicker me={me} value={target} onChange={setTarget} disabled={submit.isPending} />}
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
+      <div className="flex items-center gap-2 border-t border-slate-100 pt-3">
         <input
           ref={fileInput}
           type="file"
@@ -198,10 +198,15 @@ function ComposerForm({ me, initialFiles, onClose }) {
           variant="secondary"
           onClick={() => fileInput.current.click()}
           disabled={files.length >= MAX_FILES || submit.isPending}
+          aria-label="Tambah foto atau video"
+          className="px-3"
         >
-          📷 Foto/Video ({files.length}/{MAX_FILES})
+          📷 <span className="hidden sm:inline">Foto/Video</span>
+          <span className="text-slate-500">
+            {files.length}/{MAX_FILES}
+          </span>
         </Button>
-        <div className="flex gap-2">
+        <div className="ml-auto flex gap-2">
           <Button variant="secondary" onClick={onClose} disabled={submit.isPending}>
             Batal
           </Button>

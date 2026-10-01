@@ -157,7 +157,7 @@ function ContactPicker({ onPicked, onSelect }) {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari nama…"
           autoFocus
-          className="w-full rounded-full bg-slate-100 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-100"
+          className="w-full rounded-full bg-slate-100 px-4 py-2 text-base outline-none focus:ring-2 focus:ring-brand-100 sm:text-sm"
         />
       </div>
       {open.isError && (

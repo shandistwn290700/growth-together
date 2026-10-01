@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../lib/api.js'
 import { useMe } from '../lib/auth.js'
 import { ENROLLMENT_STATUS, classLabel, useAcademicYears, useClassrooms, useTeachers } from '../lib/queries.js'
-import { Alert, Badge, Button, Card, Select, Spinner } from '../components/ui.jsx'
+import { Alert, Avatar, Badge, Button, Card, Select, Spinner } from '../components/ui.jsx'
 import { TeacherPicker } from './ClassroomsPage.jsx'
 
 export default function ClassroomDetailPage() {
@@ -32,7 +32,8 @@ export default function ClassroomDetailPage() {
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-extrabold text-brand-700">{classLabel(data)}</h1>
+            {/* Tanda hubung tak terputus: "Ash-Shiddiq" tidak terpotong di akhir baris */}
+            <h1 className="text-2xl font-extrabold text-balance text-brand-700">{classLabel(data).replace(/-/g, '‑')}</h1>
             <p className="text-sm text-slate-600">Tahun ajaran {data.AcademicYear.name}</p>
           </div>
           <Badge variant="green">{data.students.length} siswa</Badge>
@@ -108,9 +109,9 @@ function StudentTable({ classroom, isAdmin }) {
   }
 
   return (
-    <Card className="overflow-hidden p-0">
-      <h2 className="px-5 pt-5 font-bold">Daftar siswa</h2>
-      <div className="space-y-2 px-5 pt-3">
+    <Card padding="p-0" className="overflow-hidden">
+      <h2 className="px-4 pt-4 font-bold sm:px-5 sm:pt-5">Daftar siswa</h2>
+      <div className="space-y-2 px-4 pt-3 sm:px-5">
         {reset.isError && <Alert>{getErrorMessage(reset.error)}</Alert>}
         {resetResult && (
           <Alert variant="success">
@@ -123,7 +124,39 @@ function StudentTable({ classroom, isAdmin }) {
       {classroom.students.length === 0 ? (
         <p className="p-5 text-sm text-slate-600">Belum ada siswa di kelas ini.</p>
       ) : (
-        <div className="mt-3 overflow-x-auto">
+        <>
+        {/* HP: daftar kartu (tabel 4-5 kolom terlalu sempit di layar kecil) */}
+        <ul className="mt-2 divide-y divide-slate-100 sm:hidden">
+          {classroom.students.map((s) => {
+            const status = ENROLLMENT_STATUS[s.enrollmentStatus]
+            return (
+              <li key={s.id} className="flex items-center gap-3 px-4 py-3">
+                <Avatar name={s.fullName} size="sm" />
+                <div className="min-w-0 flex-1">
+                  <Link to={`/siswa/${s.id}`} className="block truncate font-semibold text-brand-700">
+                    {s.fullName}
+                  </Link>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                    <Badge variant={status.variant}>{status.label}</Badge>
+                    <span>NIS {s.nis}</span>
+                    {s.parentAccount?.mustChangePassword && <span className="text-amber-700">ortu belum login</span>}
+                  </div>
+                </div>
+                {isAdmin && s.parentAccount && (
+                  <button
+                    onClick={() => confirmReset(s)}
+                    disabled={reset.isPending}
+                    aria-label={`Reset password orang tua ${s.fullName}`}
+                    className="shrink-0 rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600 active:bg-slate-200"
+                  >
+                    🔑 Reset
+                  </button>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+        <div className="mt-3 hidden overflow-x-auto sm:block">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs text-slate-500 uppercase">
               <tr>
@@ -177,6 +210,7 @@ function StudentTable({ classroom, isAdmin }) {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </Card>
   )
