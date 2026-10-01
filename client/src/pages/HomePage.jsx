@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../lib/api.js'
 import { useMe } from '../lib/auth.js'
 import { FEED_KEY } from '../lib/feedCache.js'
+import { useInfiniteScroll } from '../lib/useInfiniteScroll.js'
 import { Alert, Button, Card, Spinner } from '../components/ui.jsx'
 import PostComposer from '../components/feed/PostComposer.jsx'
 import PostCard from '../components/feed/PostCard.jsx'
@@ -15,21 +15,7 @@ export default function HomePage() {
     initialPageParam: undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   })
-
-  // Muat halaman berikutnya otomatis saat penanda di bawah feed terlihat.
-  const sentinel = useRef(null)
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = feed
-  useEffect(() => {
-    const el = sentinel.current
-    if (!el || !hasNextPage) return
-    const observer = new IntersectionObserver(
-      ([entry]) => entry.isIntersecting && !isFetchingNextPage && fetchNextPage(),
-      { rootMargin: '600px' },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
-
+  const sentinel = useInfiniteScroll(feed)
   const posts = feed.data?.pages.flatMap((p) => p.items) ?? []
 
   return (
@@ -56,15 +42,17 @@ export default function HomePage() {
             <PostCard key={post.id} post={post} />
           ))}
           <div ref={sentinel} />
-          {isFetchingNextPage && <Spinner label="Memuat postingan lainnya…" />}
+          {feed.isFetchingNextPage && <Spinner label="Memuat postingan lainnya…" />}
           {feed.isFetchNextPageError && (
             <div className="text-center">
-              <Button variant="secondary" onClick={() => fetchNextPage()}>
+              <Button variant="secondary" onClick={() => feed.fetchNextPage()}>
                 Coba lagi
               </Button>
             </div>
           )}
-          {!hasNextPage && posts.length > 3 && <p className="py-4 text-center text-sm text-slate-500">Sudah sampai postingan paling awal.</p>}
+          {!feed.hasNextPage && posts.length > 3 && (
+            <p className="py-4 text-center text-sm text-slate-500">Sudah sampai postingan paling awal.</p>
+          )}
         </>
       )}
     </div>

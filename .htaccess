@@ -1,0 +1,4 @@
+# Proyek ini dijalankan dengan Node.js (npm run dev), BUKAN lewat Apache.
+# Blokir semua akses Apache ke folder ini agar file rahasia seperti server/.env
+# (password database, JWT secret, API Secret Cloudinary) tidak bisa dibuka dari browser.
+Require all denied

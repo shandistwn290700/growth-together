@@ -50,6 +50,43 @@ function feedWhere(user, scope) {
   return { [Op.or]: or };
 }
 
+// ---------- Profil siswa ----------
+
+// Admin: semua siswa. Orang tua: anaknya sendiri. Guru: siswa yang pernah/sedang ada di kelasnya.
+async function canViewStudent(user, studentId, scope) {
+  if (scope.all) return true;
+  if (user.role === 'parent') return user.studentId === studentId;
+  if (scope.studentIds.has(studentId)) return true;
+  if (!scope.classroomIds.size) return false;
+  return (await Enrollment.count({ where: { studentId, classroomId: [...scope.classroomIds] } })) > 0;
+}
+
+/**
+ * SQL (subquery) berisi ID postingan di timeline seorang siswa yang boleh dilihat user.
+ * Yang dihitung adalah tag siswa itu sendiri: guru hanya melihat momen siswa saat berada
+ * di kelas yang ia ampu (atau siswa yang sekarang di kelasnya), ditambah postingannya sendiri.
+ */
+function timelinePostIdsSql(user, scope, studentId, classroomId) {
+  const sid = Number(studentId);
+  const cid = classroomId ? Number(classroomId) : null;
+  if (!Number.isInteger(sid) || (cid !== null && !Number.isInteger(cid))) {
+    throw { name: 'BadRequest', message: 'Parameter tidak valid' };
+  }
+
+  const base = [`ps."studentId" = ${sid}`];
+  if (cid) base.push(`ps."classroomId" = ${cid}`);
+  if (scope.all) return `SELECT ps."postId" FROM "PostStudents" ps WHERE ${base.join(' AND ')}`;
+
+  const ids = (set) => [...set].map(Number).join(',');
+  const access = [];
+  if (scope.studentIds.has(sid)) access.push('TRUE');
+  if (scope.classroomIds.size) access.push(`ps."classroomId" IN (${ids(scope.classroomIds)})`);
+  access.push(`p."authorId" = ${Number(user.id)}`);
+
+  return `SELECT ps."postId" FROM "PostStudents" ps JOIN "Posts" p ON p.id = ps."postId"
+    WHERE ${base.join(' AND ')} AND (${access.join(' OR ')})`;
+}
+
 // Siswa yang tampil di sebuah postingan menurut sudut pandang user.
 function studentsVisibleTo(post, user, scope) {
   return visibleTags(post, user, scope).map((t) => t.Student).filter(Boolean);
@@ -118,6 +155,8 @@ module.exports = {
   canViewPost,
   feedWhere,
   studentsVisibleTo,
+  canViewStudent,
+  timelinePostIdsSql,
   parentCanPost,
   resolvePostTags,
 };

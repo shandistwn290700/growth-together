@@ -4,7 +4,7 @@ import api, { getErrorMessage } from '../../lib/api.js'
 import { useMe } from '../../lib/auth.js'
 import { classLabel, useClassrooms } from '../../lib/queries.js'
 import { MAX_FILES, mediaTypeOf, uploadToCloudinary, validateFile } from '../../lib/upload.js'
-import { prependPostToFeed } from '../../lib/feedCache.js'
+import { addNewPost } from '../../lib/feedCache.js'
 import { Alert, Avatar, Button, Card, Select } from '../ui.jsx'
 
 let nextFileId = 1
@@ -30,7 +30,7 @@ export default function PostComposer() {
           onClick={() => setOpen(true)}
           className="flex-1 rounded-full bg-slate-100 px-4 py-2.5 text-left text-slate-500 hover:bg-slate-200"
         >
-          {me.role === 'parent' ? `Bagikan momen ${me.student?.nickname || me.displayName}…` : 'Bagikan kegiatan kelas…'}
+          {me.role === 'parent' ? `Bagikan momen ${me.student?.nickname || me.displayName}â€¦` : 'Bagikan kegiatan kelasâ€¦'}
         </button>
       </Card>
     )
@@ -94,7 +94,7 @@ function ComposerForm({ me, onClose }) {
       return data
     },
     onSuccess: (post) => {
-      prependPostToFeed(queryClient, post)
+      addNewPost(queryClient, post)
       onClose()
     },
   })
@@ -115,7 +115,7 @@ function ComposerForm({ me, onClose }) {
         rows={3}
         maxLength={5000}
         autoFocus
-        placeholder={isStaff ? 'Ceritakan kegiatan hari ini…' : 'Ceritakan perkembangan ananda…'}
+        placeholder={isStaff ? 'Ceritakan kegiatan hari iniâ€¦' : 'Ceritakan perkembangan anandaâ€¦'}
         className="w-full resize-y rounded-lg border border-slate-200 p-3 outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
       />
 
@@ -141,7 +141,7 @@ function ComposerForm({ me, onClose }) {
                   className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
                   aria-label="Hapus file"
                 >
-                  ×
+                  Ã—
                 </button>
               )}
             </div>
@@ -171,14 +171,14 @@ function ComposerForm({ me, onClose }) {
           onClick={() => fileInput.current.click()}
           disabled={files.length >= MAX_FILES || submit.isPending}
         >
-          📷 Foto/Video ({files.length}/{MAX_FILES})
+          ðŸ“· Foto/Video ({files.length}/{MAX_FILES})
         </Button>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={onClose} disabled={submit.isPending}>
             Batal
           </Button>
           <Button onClick={() => submit.mutate()} disabled={!canSubmit}>
-            {submit.isPending ? 'Mengunggah…' : 'Posting'}
+            {submit.isPending ? 'Mengunggahâ€¦' : 'Posting'}
           </Button>
         </div>
       </div>

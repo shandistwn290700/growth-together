@@ -9,7 +9,8 @@
     "db:setup": "sequelize db:create && sequelize db:migrate && sequelize db:seed:all",
     "db:migrate": "sequelize db:migrate",
     "db:reset": "sequelize db:migrate:undo:all && sequelize db:migrate && sequelize db:seed:all",
-    "check:cloudinary": "node scripts/check-cloudinary.js"
+    "check:cloudinary": "node scripts/check-cloudinary.js",
+    "db:seed": "sequelize db:seed:all"
   },
   "keywords": [],
   "author": "",

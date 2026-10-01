@@ -18,6 +18,7 @@ Platform portofolio dan perkembangan siswa SDIT, dari kelas 1 sampai lulus. Guru
    cd server
    npm run db:setup
    ```
+   Jika hanya pembuatan akun admin yang gagal (misalnya password kurang dari 8 karakter), perbaiki `.env` lalu jalankan `npm run db:seed`.
 4. Jalankan backend dan frontend di dua terminal:
    ```bash
    cd server && npm run dev   # http://localhost:3000
@@ -45,6 +46,6 @@ Riwayat kelas lama tidak dihapus, sehingga timeline siswa tetap utuh dari kelas 
 - [x] Tahap 1: setup proyek, database, model
 - [x] Tahap 2: login + panel admin (import Excel, kelas, naik kelas)
 - [x] Tahap 3: Beranda — postingan, upload foto/video, reaksi, komentar
-- [ ] Tahap 4: Profil — timeline per kelas
+- [x] Tahap 4: Profil — timeline per kelas, galeri, foto profil
 - [ ] Tahap 5: Chat live terenkripsi end-to-end
 - [ ] Tahap 6: rapikan dan deploy

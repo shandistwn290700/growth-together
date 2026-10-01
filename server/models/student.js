@@ -31,7 +31,7 @@ module.exports = (sequelize, DataTypes) => {
         validate: { isIn: { args: [['L', 'P']], msg: 'Jenis kelamin harus L atau P' } },
       },
       birthDate: DataTypes.DATEONLY,
-      photoUrl: DataTypes.STRING,
+      photoPublicId: DataTypes.STRING,
       entryYear: {
         type: DataTypes.INTEGER,
         allowNull: false,

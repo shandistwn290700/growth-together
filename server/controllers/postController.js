@@ -20,12 +20,13 @@ async function serializeOne(post, user, scope) {
 }
 
 class PostController {
-  // POST /uploads/signature  body: { resourceType: 'image' | 'video' }
+  // POST /uploads/signature  body: { resourceType: 'image' | 'video', purpose?: 'post' | 'avatar' }
   static async uploadSignature(req, res) {
-    if (req.user.role === 'parent' && !parentCanPost(req.user.student)) {
+    const purpose = req.body?.purpose ?? 'post';
+    if (purpose === 'post' && req.user.role === 'parent' && !parentCanPost(req.user.student)) {
       throw { name: 'Forbidden', message: 'Ananda sudah lulus/pindah. Timeline hanya bisa dilihat sebagai arsip' };
     }
-    res.json(createUploadSignature(req.user.id, req.body?.resourceType));
+    res.json(createUploadSignature(req.user.id, req.body?.resourceType, purpose));
   }
 
   // GET /posts?cursor=<id terakhir>  — feed Beranda, terbaru di atas.

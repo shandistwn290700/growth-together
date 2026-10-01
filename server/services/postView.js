@@ -1,14 +1,14 @@
 const { Classroom, Comment, PostMedia, PostStudent, Reaction, Student, User, sequelize } = require('../models');
 const { visibleTags } = require('./access');
-const { deliveryUrls } = require('../helpers/media');
+const { deliveryUrls, photoUrl } = require('../helpers/media');
 
 const STUDENT_ATTRS = ['id', 'fullName', 'nickname'];
 
 const authorInclude = (as = 'author') => ({
   model: User,
   as,
-  attributes: ['id', 'role', 'fullName', 'avatarUrl', 'studentId'],
-  include: { model: Student, as: 'student', attributes: STUDENT_ATTRS.concat('photoUrl') },
+  attributes: ['id', 'role', 'fullName', 'avatarPublicId', 'studentId'],
+  include: { model: Student, as: 'student', attributes: STUDENT_ATTRS.concat('photoPublicId') },
 });
 
 // Include standar untuk memuat postingan beserta media dan tag-nya.
@@ -28,7 +28,7 @@ function authorDto(user) {
     id: user.id,
     role: user.role,
     displayName: isParent ? user.student?.fullName : user.fullName,
-    avatarUrl: isParent ? user.student?.photoUrl : user.avatarUrl,
+    avatarUrl: photoUrl(isParent ? user.student?.photoPublicId : user.avatarPublicId),
   };
 }
 

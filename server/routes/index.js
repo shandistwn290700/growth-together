@@ -12,6 +12,7 @@ const UserController = require('../controllers/userController');
 const PostController = require('../controllers/postController');
 const CommentController = require('../controllers/commentController');
 const ReactionController = require('../controllers/reactionController');
+const StudentController = require('../controllers/studentController');
 
 const router = express.Router();
 
@@ -72,6 +73,13 @@ router.delete('/comments/:id', CommentController.destroy);
 router.put('/posts/:id/reaction', ReactionController.upsert);
 router.delete('/posts/:id/reaction', ReactionController.remove);
 router.get('/posts/:id/reactions', ReactionController.list);
+
+// Profil & timeline siswa.
+router.put('/auth/avatar', AuthController.updateAvatar);
+router.get('/students/:id', StudentController.show);
+router.get('/students/:id/posts', StudentController.timeline);
+router.get('/students/:id/media', StudentController.gallery);
+router.put('/students/:id/photo', StudentController.updatePhoto);
 
 router.get('/admin/teachers', authorize('admin'), UserController.listTeachers);
 router.post('/admin/users/:id/reset-password', authorize('admin'), UserController.resetPassword);

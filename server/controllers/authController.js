@@ -2,6 +2,7 @@ const { User, Student } = require('../models');
 const { comparePassword } = require('../helpers/bcrypt');
 const { signToken } = require('../helpers/jwt');
 const toUserDto = require('../helpers/userDto');
+const { validateUploadedMedia, deleteFromCloudinary } = require('../helpers/media');
 
 class AuthController {
   static async login(req, res) {
@@ -26,6 +27,22 @@ class AuthController {
   }
 
   static async me(req, res) {
+    res.json(toUserDto(req.user));
+  }
+
+  // PUT /auth/avatar — foto profil guru/admin. Orang tua memakai foto anaknya (PUT /students/:id/photo).
+  static async updateAvatar(req, res) {
+    if (req.user.role === 'parent') {
+      throw { name: 'BadRequest', message: 'Foto profil orang tua mengikuti foto ananda' };
+    }
+    const [photo] = validateUploadedMedia(req.user.id, [{ ...req.body, resourceType: 'image' }], 'avatar');
+    const oldPublicId = req.user.avatarPublicId;
+    await req.user.update({ avatarPublicId: photo.publicId });
+    if (oldPublicId) {
+      deleteFromCloudinary([{ type: 'image', publicId: oldPublicId }]).catch((err) =>
+        console.error('Gagal menghapus foto lama:', err.error?.message ?? err.message),
+      );
+    }
     res.json(toUserDto(req.user));
   }
 

@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../../lib/api.js'
 import { useMe } from '../../lib/auth.js'
 import { fullDate, timeAgo } from '../../lib/format.js'
-import { removePostFromFeed, updatePostInFeed } from '../../lib/feedCache.js'
+import { removePost, updatePost } from '../../lib/feedCache.js'
 import { Alert, Avatar, Button } from '../ui.jsx'
 import MediaGrid from './MediaGrid.jsx'
 import CommentSection from './CommentSection.jsx'
@@ -15,12 +16,25 @@ function authorName(author) {
   return author.role === 'parent' ? `Orang tua ${author.displayName}` : author.displayName
 }
 
-// "bersama Ahmad dan Aisyah" / "bersama 25 siswa"
+// "bersama Ahmad dan Aisyah" (nama bisa diklik ke profil) / "bersama 25 siswa"
 function TaggedLine({ post }) {
-  const names = post.students.map((s) => s.nickname || s.fullName)
-  if (names.length === 0 || post.author.role === 'parent') return null
-  const text = names.length <= 3 ? names.join(', ').replace(/, ([^,]*)$/, ' dan $1') : `${names.length} siswa`
-  return <span className="text-slate-600"> bersama {text}</span>
+  const students = post.students
+  if (students.length === 0 || post.author.role === 'parent') return null
+  if (students.length > 3) return <span className="text-slate-600"> bersama {students.length} siswa</span>
+
+  return (
+    <span className="text-slate-600">
+      {' bersama '}
+      {students.map((s, i) => (
+        <Fragment key={s.id}>
+          {i > 0 && (i === students.length - 1 ? ' dan ' : ', ')}
+          <Link to={`/siswa/${s.id}`} className="font-semibold text-slate-800 hover:underline">
+            {s.nickname || s.fullName}
+          </Link>
+        </Fragment>
+      ))}
+    </span>
+  )
 }
 
 export default function PostCard({ post }) {
@@ -47,8 +61,8 @@ export default function PostCard({ post }) {
             <time dateTime={post.createdAt} title={fullDate(post.createdAt)}>
               {timeAgo(post.createdAt)}
             </time>
-            {post.classroom && ` · ${post.classroom.label}`}
-            {post.updatedAt !== post.createdAt && ' · diedit'}
+            {post.classroom && ` Â· ${post.classroom.label}`}
+            {post.updatedAt !== post.createdAt && ' Â· diedit'}
           </p>
         </div>
         {(post.canEdit || post.canDelete) && <PostMenu post={post} onEdit={() => setEditing(true)} />}
@@ -80,7 +94,7 @@ export default function PostCard({ post }) {
           className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-bold text-slate-600 hover:bg-slate-100"
           aria-expanded={showComments}
         >
-          💬 Komentar
+          ðŸ’¬ Komentar
         </button>
       </div>
 
@@ -103,7 +117,7 @@ function PostMenu({ post, onEdit }) {
 
   const remove = useMutation({
     mutationFn: () => api.delete(`/posts/${post.id}`),
-    onSuccess: () => removePostFromFeed(queryClient, post.id),
+    onSuccess: () => removePost(queryClient, post.id),
     onError: (err) => window.alert(getErrorMessage(err)),
   })
 
@@ -115,7 +129,7 @@ function PostMenu({ post, onEdit }) {
         aria-label="Menu postingan"
         aria-expanded={open}
       >
-        ⋯
+        â‹¯
       </button>
       {open && (
         <div role="menu" className="absolute right-0 z-10 mt-1 w-44 overflow-hidden rounded-xl bg-white py-1 shadow-lg ring-1 ring-slate-200">
@@ -156,7 +170,7 @@ function EditCaption({ post, onDone }) {
   const save = useMutation({
     mutationFn: () => api.patch(`/posts/${post.id}`, { caption }).then((r) => r.data),
     onSuccess: (updated) => {
-      updatePostInFeed(queryClient, post.id, () => ({ caption: updated.caption, updatedAt: updated.updatedAt }))
+      updatePost(queryClient, post.id, () => ({ caption: updated.caption, updatedAt: updated.updatedAt }))
       onDone()
     },
   })

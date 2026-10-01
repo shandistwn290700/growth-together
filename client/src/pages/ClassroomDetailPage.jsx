@@ -139,7 +139,11 @@ function StudentTable({ classroom, isAdmin }) {
                 const status = ENROLLMENT_STATUS[s.enrollmentStatus]
                 return (
                   <tr key={s.id}>
-                    <td className="px-5 py-2 font-semibold">{s.fullName}</td>
+                    <td className="px-5 py-2 font-semibold">
+                      <Link to={`/siswa/${s.id}`} className="text-brand-700 hover:underline">
+                        {s.fullName}
+                      </Link>
+                    </td>
                     <td className="px-3 py-2 text-slate-600">{s.nis}</td>
                     <td className="px-3 py-2">
                       <Badge variant={status.variant}>{status.label}</Badge>

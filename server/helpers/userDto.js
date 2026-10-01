@@ -1,3 +1,5 @@
+const { photoUrl } = require('./media');
+
 // Bentuk data user yang dikirim ke client.
 // Akun orang tua ditampilkan dengan nama dan foto anaknya.
 module.exports = (user) => {
@@ -8,7 +10,7 @@ module.exports = (user) => {
     role: user.role,
     mustChangePassword: user.mustChangePassword,
     displayName: user.role === 'parent' ? student?.fullName : user.fullName,
-    avatarUrl: user.role === 'parent' ? student?.photoUrl : user.avatarUrl,
+    avatarUrl: photoUrl(user.role === 'parent' ? student?.photoPublicId : user.avatarPublicId),
     student: student
       ? {
           id: student.id,

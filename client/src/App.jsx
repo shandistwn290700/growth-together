@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router'
 import MainLayout from './layouts/MainLayout.jsx'
 import { RequireAuth, RequireRole } from './components/RouteGuards.jsx'
 import HomePage from './pages/HomePage.jsx'
-import ProfilePage from './pages/ProfilePage.jsx'
+import ProfilePage, { StudentProfilePage } from './pages/ProfilePage.jsx'
 import ChatPage from './pages/ChatPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import ChangePasswordPage from './pages/ChangePasswordPage.jsx'
@@ -22,6 +22,7 @@ export default function App() {
         <Route element={<MainLayout />}>
           <Route index element={<HomePage />} />
           <Route path="profil" element={<ProfilePage />} />
+          <Route path="siswa/:id" element={<StudentProfilePage />} />
           <Route element={<RequireRole roles={['teacher', 'parent']} />}>
             <Route path="chat" element={<ChatPage />} />
           </Route>

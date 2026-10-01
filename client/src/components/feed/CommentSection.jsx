@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../../lib/api.js'
 import { useMe } from '../../lib/auth.js'
 import { timeAgo, fullDate } from '../../lib/format.js'
-import { updatePostInFeed } from '../../lib/feedCache.js'
+import { updatePost } from '../../lib/feedCache.js'
 import { Alert, Avatar, Select, Spinner } from '../ui.jsx'
 
 // Komentar dikelompokkan per siswa. Orang tua hanya melihat utas anaknya; guru/admin melihat semua utas.
@@ -53,7 +53,7 @@ function CommentItem({ comment, post, me, studentId }) {
               post={post}
               fixedStudentId={studentId}
               parentId={comment.id}
-              placeholder={`Balas ${comment.author.displayName}…`}
+              placeholder={`Balas ${comment.author.displayName}â€¦`}
               onDone={() => setReplying(false)}
               autoFocus
             />
@@ -73,7 +73,7 @@ function CommentBubble({ comment, post, me, onReply }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', post.id] })
       const removed = 1 + (comment.replies?.length ?? 0)
-      updatePostInFeed(queryClient, post.id, (p) => ({ commentCount: Math.max(0, p.commentCount - removed) }))
+      updatePost(queryClient, post.id, (p) => ({ commentCount: Math.max(0, p.commentCount - removed) }))
     },
   })
   const canDelete = comment.author.id === me.id || me.role === 'admin'
@@ -130,7 +130,7 @@ function CommentForm({ post, students, fixedStudentId, parentId, placeholder, on
     onSuccess: () => {
       setContent('')
       queryClient.invalidateQueries({ queryKey: ['comments', post.id] })
-      updatePostInFeed(queryClient, post.id, (p) => ({ commentCount: p.commentCount + 1 }))
+      updatePost(queryClient, post.id, (p) => ({ commentCount: p.commentCount + 1 }))
       onDone?.()
     },
   })
@@ -149,7 +149,7 @@ function CommentForm({ post, students, fixedStudentId, parentId, placeholder, on
           {needsPicker && (
             <div className="sm:w-44">
               <Select value={studentId} onChange={(e) => setStudentId(e.target.value)} aria-label="Komentar tentang" required>
-                <option value="">Tentang siswa…</option>
+                <option value="">Tentang siswaâ€¦</option>
                 {students.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.nickname || s.fullName}
@@ -161,7 +161,7 @@ function CommentForm({ post, students, fixedStudentId, parentId, placeholder, on
           <input
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder={placeholder ?? 'Tulis komentar…'}
+            placeholder={placeholder ?? 'Tulis komentarâ€¦'}
             maxLength={2000}
             autoFocus={autoFocus}
             className="min-w-0 flex-1 rounded-full bg-slate-100 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-100"

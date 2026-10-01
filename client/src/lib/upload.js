@@ -24,9 +24,10 @@ export function validateFile(file) {
 }
 
 // Upload langsung dari browser ke Cloudinary memakai tanda tangan dari server kita.
-export async function uploadToCloudinary(file, onProgress) {
+// purpose: 'post' (foto/video postingan) atau 'avatar' (foto profil).
+export async function uploadToCloudinary(file, onProgress, purpose = 'post') {
   const resourceType = mediaTypeOf(file)
-  const { data: signed } = await api.post('/uploads/signature', { resourceType })
+  const { data: signed } = await api.post('/uploads/signature', { resourceType, purpose })
 
   const form = new FormData()
   Object.entries(signed.params).forEach(([key, value]) => form.append(key, value))

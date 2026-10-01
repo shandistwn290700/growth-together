@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../../lib/api.js'
 import { REACTIONS, reactionOf } from '../../lib/reactions.js'
-import { updatePostInFeed } from '../../lib/feedCache.js'
+import { updatePost } from '../../lib/feedCache.js'
 import { Avatar, Spinner } from '../ui.jsx'
 
 // Tombol reaksi ala Facebook: klik = Suka/batal, tahan (HP) atau arahkan kursor (laptop) = pilih reaksi lain.
@@ -16,7 +16,7 @@ export function ReactionButton({ post }) {
   const react = useMutation({
     mutationFn: (type) =>
       (type ? api.put(`/posts/${post.id}/reaction`, { type }) : api.delete(`/posts/${post.id}/reaction`)).then((r) => r.data),
-    onSuccess: (reactions) => updatePostInFeed(queryClient, post.id, () => ({ reactions })),
+    onSuccess: (reactions) => updatePost(queryClient, post.id, () => ({ reactions })),
   })
 
   const choose = (type) => {
@@ -77,7 +77,7 @@ export function ReactionButton({ post }) {
           mine ? mine.color : 'text-slate-600'
         }`}
       >
-        <span className="text-lg leading-none">{mine ? mine.emoji : '👍'}</span>
+        <span className="text-lg leading-none">{mine ? mine.emoji : 'ðŸ‘'}</span>
         {mine ? mine.label : 'Suka'}
       </button>
     </div>
@@ -124,7 +124,7 @@ function ReactorList({ postId, onClose }) {
       <div className="flex items-center justify-between px-1 pb-1">
         <span className="text-sm font-bold">Sudah merespons</span>
         <button onClick={onClose} className="text-slate-400 hover:text-slate-700" aria-label="Tutup">
-          ×
+          Ã—
         </button>
       </div>
       {list.isPending ? (

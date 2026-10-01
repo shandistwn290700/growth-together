@@ -45,7 +45,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       fullName: DataTypes.STRING,
       studentId: DataTypes.INTEGER,
-      avatarUrl: DataTypes.STRING,
+      avatarPublicId: DataTypes.STRING,
       mustChangePassword: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
       isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
       passwordChangedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },

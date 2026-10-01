@@ -68,7 +68,7 @@ export default function MediaGrid({ media }) {
   )
 }
 
-function Lightbox({ media, index, onChange }) {
+export function Lightbox({ media, index, onChange }) {
   const current = media[index]
   const close = () => onChange(null)
   const go = (delta) => onChange((index + delta + media.length) % media.length)

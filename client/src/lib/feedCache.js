@@ -1,32 +1,28 @@
-// Perbarui satu postingan di cache feed tanpa memuat ulang seluruh feed.
-export const FEED_KEY = ['feed']
+// Postingan tampil di beberapa daftar (feed Beranda, timeline profil). Semua daftar itu
+// memakai query key berawalan 'posts', jadi satu perubahan bisa diterapkan ke semuanya.
+export const FEED_KEY = ['posts', 'feed']
+export const timelineKey = (studentId, classroomId) => ['posts', 'timeline', studentId, classroomId ?? 'all']
+const ALL_POST_LISTS = { queryKey: ['posts'] }
 
-export function updatePostInFeed(queryClient, postId, update) {
-  queryClient.setQueryData(FEED_KEY, (data) =>
-    data && {
-      ...data,
-      pages: data.pages.map((page) => ({
-        ...page,
-        items: page.items.map((post) => (post.id === postId ? { ...post, ...update(post) } : post)),
-      })),
-    },
+const mapItems = (data, fn) => data?.pages && { ...data, pages: data.pages.map((page) => ({ ...page, items: fn(page.items) })) }
+
+export function updatePost(queryClient, postId, update) {
+  queryClient.setQueriesData(ALL_POST_LISTS, (data) =>
+    mapItems(data, (items) => items.map((post) => (post.id === postId ? { ...post, ...update(post) } : post))),
   )
 }
 
-export function removePostFromFeed(queryClient, postId) {
-  queryClient.setQueryData(FEED_KEY, (data) =>
-    data && {
-      ...data,
-      pages: data.pages.map((page) => ({ ...page, items: page.items.filter((post) => post.id !== postId) })),
-    },
-  )
+export function removePost(queryClient, postId) {
+  queryClient.setQueriesData(ALL_POST_LISTS, (data) => mapItems(data, (items) => items.filter((post) => post.id !== postId)))
+  queryClient.invalidateQueries({ queryKey: ['gallery'] })
+  queryClient.invalidateQueries({ queryKey: ['student'] })
 }
 
-export function prependPostToFeed(queryClient, post) {
+export function addNewPost(queryClient, post) {
   queryClient.setQueryData(FEED_KEY, (data) =>
-    data && {
-      ...data,
-      pages: data.pages.map((page, i) => (i === 0 ? { ...page, items: [post, ...page.items] } : page)),
-    },
+    data && { ...data, pages: data.pages.map((page, i) => (i === 0 ? { ...page, items: [post, ...page.items] } : page)) },
   )
+  queryClient.invalidateQueries({ queryKey: ['posts', 'timeline'] })
+  queryClient.invalidateQueries({ queryKey: ['gallery'] })
+  queryClient.invalidateQueries({ queryKey: ['student'] })
 }
