@@ -6,6 +6,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       PostStudent.belongsTo(models.Post, { foreignKey: 'postId' });
       PostStudent.belongsTo(models.Student, { foreignKey: 'studentId' });
+      PostStudent.belongsTo(models.Classroom, { foreignKey: 'classroomId' });
     }
   }
 
@@ -13,6 +14,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       postId: { type: DataTypes.INTEGER, allowNull: false },
       studentId: { type: DataTypes.INTEGER, allowNull: false },
+      classroomId: { type: DataTypes.INTEGER, allowNull: false },
     },
     { sequelize, modelName: 'PostStudent' },
   );

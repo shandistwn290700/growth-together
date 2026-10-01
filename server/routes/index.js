@@ -9,8 +9,17 @@ const AcademicYearController = require('../controllers/academicYearController');
 const ClassroomController = require('../controllers/classroomController');
 const ImportController = require('../controllers/importController');
 const UserController = require('../controllers/userController');
+const PostController = require('../controllers/postController');
+const CommentController = require('../controllers/commentController');
+const ReactionController = require('../controllers/reactionController');
 
 const router = express.Router();
+
+// ID di URL harus angka, selain itu langsung 404 (bukan error database).
+router.param('id', (req, res, next, id) => {
+  if (/^\d{1,9}$/.test(id)) return next();
+  next({ name: 'NotFound', message: 'Data tidak ditemukan' });
+});
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -49,6 +58,20 @@ router.post('/classrooms', authorize('admin'), ClassroomController.create);
 router.get('/classrooms/:id', authorize('admin', 'teacher'), ClassroomController.show);
 router.put('/classrooms/:id', authorize('admin'), ClassroomController.update);
 router.post('/classrooms/:id/promotion', authorize('admin', 'teacher'), ClassroomController.promote);
+
+// Feed & postingan. Hak akses per postingan dicek di services/access.js.
+router.post('/uploads/signature', PostController.uploadSignature);
+router.get('/posts', PostController.feed);
+router.post('/posts', PostController.create);
+router.get('/posts/:id', PostController.show);
+router.patch('/posts/:id', PostController.update);
+router.delete('/posts/:id', PostController.destroy);
+router.get('/posts/:id/comments', CommentController.list);
+router.post('/posts/:id/comments', CommentController.create);
+router.delete('/comments/:id', CommentController.destroy);
+router.put('/posts/:id/reaction', ReactionController.upsert);
+router.delete('/posts/:id/reaction', ReactionController.remove);
+router.get('/posts/:id/reactions', ReactionController.list);
 
 router.get('/admin/teachers', authorize('admin'), UserController.listTeachers);
 router.post('/admin/users/:id/reset-password', authorize('admin'), UserController.resetPassword);

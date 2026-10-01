@@ -12,7 +12,7 @@ Platform portofolio dan perkembangan siswa SDIT, dari kelas 1 sampai lulus. Guru
    winget install PostgreSQL.PostgreSQL.18
    ```
    Atau unduh installer dari https://www.postgresql.org/download/windows/. Catat password user `postgres` yang dibuat saat instalasi.
-2. Salin `server/.env.example` menjadi `server/.env`, lalu isi `DB_PASSWORD`, `JWT_SECRET`, dan `SEED_ADMIN_PASSWORD`.
+2. Salin `server/.env.example` menjadi `server/.env`, lalu isi `DB_PASSWORD`, `JWT_SECRET`, `SEED_ADMIN_PASSWORD`, dan kredensial Cloudinary. Cek Cloudinary dengan `npm run check:cloudinary`.
 3. Buat database, tabel, dan akun admin pertama:
    ```bash
    cd server
@@ -44,7 +44,7 @@ Riwayat kelas lama tidak dihapus, sehingga timeline siswa tetap utuh dari kelas 
 
 - [x] Tahap 1: setup proyek, database, model
 - [x] Tahap 2: login + panel admin (import Excel, kelas, naik kelas)
-- [ ] Tahap 3: Beranda — postingan, upload foto/video, reaksi, komentar
+- [x] Tahap 3: Beranda — postingan, upload foto/video, reaksi, komentar
 - [ ] Tahap 4: Profil — timeline per kelas
 - [ ] Tahap 5: Chat live terenkripsi end-to-end
 - [ ] Tahap 6: rapikan dan deploy

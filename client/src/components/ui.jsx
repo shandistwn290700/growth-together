@@ -65,6 +65,18 @@ export function Badge({ variant = 'gray', children }) {
   return <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-bold ${BADGE_VARIANTS[variant]}`}>{children}</span>
 }
 
+const AVATAR_SIZES = { sm: 'size-8 text-sm', md: 'size-10 text-base', lg: 'size-16 text-2xl' }
+
+export function Avatar({ name, src, size = 'md' }) {
+  const classes = `${AVATAR_SIZES[size]} shrink-0 rounded-full`
+  if (src) return <img src={src} alt="" className={`${classes} object-cover`} />
+  return (
+    <div aria-hidden className={`${classes} flex items-center justify-center bg-brand-100 font-extrabold text-brand-700`}>
+      {name?.trim()?.[0]?.toUpperCase() ?? '?'}
+    </div>
+  )
+}
+
 export function Spinner({ label = 'Memuat…' }) {
   return (
     <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-500">

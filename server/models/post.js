@@ -17,8 +17,11 @@ module.exports = (sequelize, DataTypes) => {
   Post.init(
     {
       authorId: { type: DataTypes.INTEGER, allowNull: false },
-      classroomId: { type: DataTypes.INTEGER, allowNull: false },
-      caption: DataTypes.TEXT,
+      classroomId: DataTypes.INTEGER,
+      caption: {
+        type: DataTypes.TEXT,
+        validate: { len: { args: [0, 5000], msg: 'Caption maksimal 5000 karakter' } },
+      },
     },
     { sequelize, modelName: 'Post' },
   );
