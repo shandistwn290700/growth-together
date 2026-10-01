@@ -9,7 +9,7 @@ export default function ChatPage() {
 
   return (
     <ChatGate>
-      <div className="grid h-[calc(100dvh-10.5rem)] overflow-hidden rounded-xl bg-white shadow-sm md:h-[calc(100dvh-6.5rem)] md:grid-cols-[20rem_1fr]">
+      <div className="grid h-[calc(100dvh-9.5rem)] overflow-hidden rounded-xl bg-white shadow-sm md:h-[calc(100dvh-6.5rem)] md:grid-cols-[20rem_1fr]">
         <aside className={`min-h-0 border-slate-100 md:flex md:border-r ${conversationId ? 'hidden' : 'flex'}`}>
           <ConversationList activeId={conversationId} />
         </aside>

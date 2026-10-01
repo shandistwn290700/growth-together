@@ -9,9 +9,28 @@ import { Alert, Avatar, Button, Card, Select } from '../ui.jsx'
 
 let nextFileId = 1
 
+// Tambahkan file pilihan ke daftar: buang yang tidak valid/terlalu besar dan batasi jumlahnya.
+function withNewFiles(existing, list) {
+  const picked = [...list]
+  const errors = picked.map(validateFile).filter(Boolean)
+  const valid = picked.filter((f) => !validateFile(f))
+  const room = MAX_FILES - existing.length
+  if (valid.length > room) errors.push(`Maksimal ${MAX_FILES} foto/video per postingan`)
+  const added = valid.slice(0, room).map((file) => ({
+    id: nextFileId++,
+    file,
+    type: mediaTypeOf(file),
+    previewUrl: URL.createObjectURL(file),
+    progress: 0,
+  }))
+  return { files: [...existing, ...added], error: errors.join('. ') }
+}
+
 export default function PostComposer() {
   const { data: me } = useMe()
+  // false = tertutup; { files } = terbuka (files berisi foto/video yang langsung dipilih, jika ada)
   const [open, setOpen] = useState(false)
+  const quickPicker = useRef(null)
 
   if (me.role === 'parent' && me.student?.status !== 'active') {
     return (
@@ -23,29 +42,52 @@ export default function PostComposer() {
   }
 
   if (!open) {
+    const action =
+      'flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100'
     return (
-      <Card className="flex items-center gap-3 p-4">
-        <Avatar name={me.displayName} src={me.avatarUrl} />
-        <button
-          onClick={() => setOpen(true)}
-          className="flex-1 rounded-full bg-slate-100 px-4 py-2.5 text-left text-slate-500 hover:bg-slate-200"
-        >
-          {me.role === 'parent' ? `Bagikan momen ${me.student?.nickname || me.displayName}â€¦` : 'Bagikan kegiatan kelasâ€¦'}
-        </button>
+      <Card className="px-4 pt-3 pb-1">
+        <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+          <Avatar name={me.displayName} src={me.avatarUrl} />
+          <button
+            onClick={() => setOpen({ files: [] })}
+            className="flex-1 rounded-full bg-slate-100 px-4 py-2.5 text-left text-slate-500 hover:bg-slate-200"
+          >
+            {me.role === 'parent' ? `Bagikan momen ${me.student?.nickname || me.displayName}…` : 'Bagikan kegiatan kelas…'}
+          </button>
+        </div>
+        <div className="flex py-1">
+          <input
+            ref={quickPicker}
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            hidden
+            onChange={(e) => e.target.files.length && setOpen({ files: [...e.target.files] })}
+          />
+          <button onClick={() => quickPicker.current.click()} className={action}>
+            <span className="text-xl">🖼️</span> Foto/Video
+          </button>
+          <button onClick={() => setOpen({ files: [] })} className={action}>
+            <span className="text-xl">{me.role === 'parent' ? '🌟' : '🏷️'}</span>
+            {me.role === 'parent' ? 'Pencapaian' : 'Tandai siswa'}
+          </button>
+        </div>
       </Card>
     )
   }
 
-  return <ComposerForm me={me} onClose={() => setOpen(false)} />
+  return <ComposerForm me={me} initialFiles={open.files} onClose={() => setOpen(false)} />
 }
 
-function ComposerForm({ me, onClose }) {
+function ComposerForm({ me, initialFiles, onClose }) {
   const queryClient = useQueryClient()
   const fileInput = useRef(null)
   const isStaff = me.role !== 'parent'
   const [caption, setCaption] = useState('')
-  const [files, setFiles] = useState([])
-  const [fileError, setFileError] = useState('')
+  // File yang sudah dipilih lewat tombol "Foto/Video" di kotak tertutup langsung ditampilkan.
+  const [initial] = useState(() => withNewFiles([], initialFiles ?? []))
+  const [files, setFiles] = useState(initial.files)
+  const [fileError, setFileError] = useState(initial.error)
   const [target, setTarget] = useState({ classroomId: null, studentIds: [] })
 
   // Bersihkan URL pratinjau saat komponen ditutup.
@@ -56,23 +98,9 @@ function ComposerForm({ me, onClose }) {
   useEffect(() => () => filesRef.current.forEach((f) => URL.revokeObjectURL(f.previewUrl)), [])
 
   const addFiles = (list) => {
-    setFileError('')
-    const picked = [...list]
-    const errors = picked.map(validateFile).filter(Boolean)
-    const valid = picked.filter((f) => !validateFile(f))
-    const room = MAX_FILES - files.length
-    if (valid.length > room) errors.push(`Maksimal ${MAX_FILES} foto/video per postingan`)
-    setFiles([
-      ...files,
-      ...valid.slice(0, room).map((file) => ({
-        id: nextFileId++,
-        file,
-        type: mediaTypeOf(file),
-        previewUrl: URL.createObjectURL(file),
-        progress: 0,
-      })),
-    ])
-    setFileError(errors.join('. '))
+    const result = withNewFiles(files, list)
+    setFiles(result.files)
+    setFileError(result.error)
   }
 
   const removeFile = (id) => {
@@ -115,7 +143,7 @@ function ComposerForm({ me, onClose }) {
         rows={3}
         maxLength={5000}
         autoFocus
-        placeholder={isStaff ? 'Ceritakan kegiatan hari iniâ€¦' : 'Ceritakan perkembangan anandaâ€¦'}
+        placeholder={isStaff ? 'Ceritakan kegiatan hari ini…' : 'Ceritakan perkembangan ananda…'}
         className="w-full resize-y rounded-lg border border-slate-200 p-3 outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
       />
 
@@ -141,7 +169,7 @@ function ComposerForm({ me, onClose }) {
                   className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
                   aria-label="Hapus file"
                 >
-                  Ã—
+                  ×
                 </button>
               )}
             </div>
@@ -171,14 +199,14 @@ function ComposerForm({ me, onClose }) {
           onClick={() => fileInput.current.click()}
           disabled={files.length >= MAX_FILES || submit.isPending}
         >
-          ðŸ“· Foto/Video ({files.length}/{MAX_FILES})
+          📷 Foto/Video ({files.length}/{MAX_FILES})
         </Button>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={onClose} disabled={submit.isPending}>
             Batal
           </Button>
           <Button onClick={() => submit.mutate()} disabled={!canSubmit}>
-            {submit.isPending ? 'Mengunggahâ€¦' : 'Posting'}
+            {submit.isPending ? 'Mengunggah…' : 'Posting'}
           </Button>
         </div>
       </div>

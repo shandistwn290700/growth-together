@@ -53,7 +53,7 @@ function CommentItem({ comment, post, me, studentId }) {
               post={post}
               fixedStudentId={studentId}
               parentId={comment.id}
-              placeholder={`Balas ${comment.author.displayName}â€¦`}
+              placeholder={`Balas ${comment.author.displayName}…`}
               onDone={() => setReplying(false)}
               autoFocus
             />
@@ -149,7 +149,7 @@ function CommentForm({ post, students, fixedStudentId, parentId, placeholder, on
           {needsPicker && (
             <div className="sm:w-44">
               <Select value={studentId} onChange={(e) => setStudentId(e.target.value)} aria-label="Komentar tentang" required>
-                <option value="">Tentang siswaâ€¦</option>
+                <option value="">Tentang siswa…</option>
                 {students.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.nickname || s.fullName}
@@ -161,7 +161,7 @@ function CommentForm({ post, students, fixedStudentId, parentId, placeholder, on
           <input
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder={placeholder ?? 'Tulis komentarâ€¦'}
+            placeholder={placeholder ?? 'Tulis komentar…'}
             maxLength={2000}
             autoFocus={autoFocus}
             className="min-w-0 flex-1 rounded-full bg-slate-100 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-100"

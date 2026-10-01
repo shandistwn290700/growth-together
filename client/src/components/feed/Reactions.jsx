@@ -77,7 +77,7 @@ export function ReactionButton({ post }) {
           mine ? mine.color : 'text-slate-600'
         }`}
       >
-        <span className="text-lg leading-none">{mine ? mine.emoji : 'ðŸ‘'}</span>
+        <span className="text-lg leading-none">{mine ? mine.emoji : '👍'}</span>
         {mine ? mine.label : 'Suka'}
       </button>
     </div>
@@ -124,7 +124,7 @@ function ReactorList({ postId, onClose }) {
       <div className="flex items-center justify-between px-1 pb-1">
         <span className="text-sm font-bold">Sudah merespons</span>
         <button onClick={onClose} className="text-slate-400 hover:text-slate-700" aria-label="Tutup">
-          Ã—
+          ×
         </button>
       </div>
       {list.isPending ? (

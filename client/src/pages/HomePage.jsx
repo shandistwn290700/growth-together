@@ -6,6 +6,7 @@ import { useInfiniteScroll } from '../lib/useInfiniteScroll.js'
 import { Alert, Button, Card, Spinner } from '../components/ui.jsx'
 import PostComposer from '../components/feed/PostComposer.jsx'
 import PostCard from '../components/feed/PostCard.jsx'
+import { LeftSidebar, RightSidebar } from '../components/home/Sidebars.jsx'
 
 export default function HomePage() {
   const { data: me } = useMe()
@@ -18,8 +19,23 @@ export default function HomePage() {
   const sentinel = useInfiniteScroll(feed)
   const posts = feed.data?.pages.flatMap((p) => p.items) ?? []
 
+  // Laptop: pintasan di kiri, feed di tengah, kontak di kanan (seperti Facebook). HP: feed saja.
   return (
-    <div className="mx-auto max-w-xl space-y-4">
+    <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6 xl:grid-cols-[280px_minmax(0,1fr)_280px]">
+      <div className="hidden lg:block">
+        <LeftSidebar />
+      </div>
+      <Feed me={me} feed={feed} posts={posts} sentinel={sentinel} />
+      <div className="hidden xl:block">
+        <RightSidebar />
+      </div>
+    </div>
+  )
+}
+
+function Feed({ me, feed, posts, sentinel }) {
+  return (
+    <div className="mx-auto w-full max-w-[600px] space-y-4">
       <PostComposer />
 
       {feed.isPending ? (

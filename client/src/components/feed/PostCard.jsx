@@ -61,8 +61,8 @@ export default function PostCard({ post }) {
             <time dateTime={post.createdAt} title={fullDate(post.createdAt)}>
               {timeAgo(post.createdAt)}
             </time>
-            {post.classroom && ` Â· ${post.classroom.label}`}
-            {post.updatedAt !== post.createdAt && ' Â· diedit'}
+            {post.classroom && ` · ${post.classroom.label}`}
+            {post.updatedAt !== post.createdAt && ' · diedit'}
           </p>
         </div>
         {(post.canEdit || post.canDelete) && <PostMenu post={post} onEdit={() => setEditing(true)} />}
@@ -94,7 +94,7 @@ export default function PostCard({ post }) {
           className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-bold text-slate-600 hover:bg-slate-100"
           aria-expanded={showComments}
         >
-          ðŸ’¬ Komentar
+          💬 Komentar
         </button>
       </div>
 
@@ -129,7 +129,7 @@ function PostMenu({ post, onEdit }) {
         aria-label="Menu postingan"
         aria-expanded={open}
       >
-        â‹¯
+        ⋯
       </button>
       {open && (
         <div role="menu" className="absolute right-0 z-10 mt-1 w-44 overflow-hidden rounded-xl bg-white py-1 shadow-lg ring-1 ring-slate-200">

@@ -1,38 +1,25 @@
-import { NavLink, Outlet, Link } from 'react-router'
+import { useEffect, useRef, useState } from 'react'
+import { NavLink, Outlet, Link, useLocation } from 'react-router'
 import { HomeIcon, ChatIcon, UserIcon, SproutIcon, ClassIcon, ShieldIcon, LogoutIcon } from '../components/Icons.jsx'
 import { ROLE_LABELS, useAuthActions, useMe } from '../lib/auth.js'
+import { Avatar } from '../components/ui.jsx'
 import { ChatProvider } from '../components/chat/ChatProvider.jsx'
 import { useUnreadCount } from '../components/chat/chatState.js'
 
-// Menu yang tampil tergantung peran. Chat hanya untuk guru ↔ orang tua.
+// Tab di tengah bilah atas (laptop) dan menu bawah (HP). Chat hanya untuk guru ↔ orang tua.
 const NAV_ITEMS = [
   { to: '/', label: 'Beranda', icon: HomeIcon, end: true, roles: ['admin', 'teacher', 'parent'] },
-  { to: '/kelas', label: 'Kelas', icon: ClassIcon, roles: ['admin', 'teacher'] },
-  { to: '/chat', label: 'Chat', icon: ChatIcon, roles: ['teacher', 'parent'] },
-  { to: '/admin', label: 'Admin', icon: ShieldIcon, roles: ['admin'] },
   { to: '/profil', label: 'Profil', icon: UserIcon, roles: ['admin', 'teacher', 'parent'] },
+  { to: '/kelas', label: 'Kelas', icon: ClassIcon, roles: ['admin', 'teacher'] },
+  { to: '/chat', label: 'Chat', icon: ChatIcon, roles: ['teacher', 'parent'], mobileOnly: true },
+  { to: '/admin', label: 'Admin', icon: ShieldIcon, roles: ['admin'] },
 ]
 
-function navClass({ isActive }) {
-  return [
-    'flex flex-col items-center justify-center gap-0.5 text-xs font-semibold transition-colors',
-    'md:flex-row md:gap-2 md:rounded-lg md:px-4 md:py-2 md:text-sm',
-    isActive
-      ? 'text-brand-700 md:bg-brand-50'
-      : 'text-slate-500 hover:text-brand-700 md:hover:bg-slate-100',
-  ].join(' ')
-}
-
-// Ikon menu dengan badge jumlah pesan belum dibaca (khusus menu Chat).
-function NavIcon({ icon: Icon, badge, className }) {
+function Badge({ count }) {
+  if (!count) return null
   return (
-    <span className="relative">
-      <Icon className={className} />
-      {badge > 0 && (
-        <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-          {badge > 99 ? '99+' : badge}
-        </span>
-      )}
+    <span className="absolute -top-1 -right-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white ring-2 ring-white">
+      {count > 99 ? '99+' : count}
     </span>
   )
 }
@@ -47,60 +34,155 @@ export default function MainLayout() {
 
 function Layout() {
   const { data: me } = useMe()
-  const { logout } = useAuthActions()
+  const { pathname } = useLocation()
   const { data: unread = 0 } = useUnreadCount()
   const items = NAV_ITEMS.filter((item) => item.roles.includes(me.role))
-  const badgeFor = (to) => (to === '/chat' ? unread : 0)
+  const canChat = me.role !== 'admin'
+  // Beranda memakai tata letak 3 kolom yang lebar; halaman lain di tengah.
+  const wide = pathname === '/'
 
   return (
     <div className="min-h-dvh pb-16 md:pb-0">
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4">
-          <Link to="/" className="flex items-center gap-2 text-brand-700">
-            <SproutIcon className="size-7" />
-            <span className="hidden text-lg font-extrabold tracking-tight sm:inline">Growth Together</span>
+      <header className="sticky top-0 z-30 bg-white shadow-sm">
+        <div className="flex h-14 items-center justify-between gap-2 px-4">
+          <Link to="/" className="flex items-center gap-2 text-brand-700 lg:w-[280px]">
+            <span className="flex size-10 items-center justify-center rounded-full bg-brand-700 text-white">
+              <SproutIcon className="size-6" />
+            </span>
+            <span className="hidden text-xl font-extrabold tracking-tight sm:inline">Growth Together</span>
           </Link>
-          <nav className="hidden gap-1 md:flex">
-            {items.map(({ to, label, icon, end }) => (
-              <NavLink key={to} to={to} end={end} className={navClass}>
-                <NavIcon icon={icon} badge={badgeFor(to)} className="size-5" />
-                {label}
-              </NavLink>
-            ))}
+
+          {/* Tab tengah ala Facebook: ikon saja, garis bawah untuk tab yang aktif */}
+          <nav className="hidden h-full flex-1 justify-center md:flex" aria-label="Menu utama">
+            {items
+              .filter((item) => !item.mobileOnly)
+              .map(({ to, label, icon: Icon, end }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={end}
+                  title={label}
+                  aria-label={label}
+                  className={({ isActive }) =>
+                    `relative flex h-full w-24 items-center justify-center border-b-[3px] transition-colors lg:w-28 ${
+                      isActive
+                        ? 'border-brand-600 text-brand-600'
+                        : 'border-transparent text-slate-500 hover:rounded-lg hover:bg-slate-100'
+                    }`
+                  }
+                >
+                  <Icon className="size-7" />
+                </NavLink>
+              ))}
           </nav>
-          <div className="flex items-center gap-3">
-            <div className="text-right leading-tight">
-              <div className="max-w-40 truncate text-sm font-bold">{me.displayName}</div>
-              <div className="text-xs text-slate-500">{ROLE_LABELS[me.role]}</div>
-            </div>
-            <button
-              onClick={logout}
-              className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-red-600"
-              title="Keluar"
-              aria-label="Keluar"
-            >
-              <LogoutIcon className="size-5" />
-            </button>
+
+          <div className="flex items-center justify-end gap-2 lg:w-[280px]">
+            {canChat && (
+              <NavLink
+                to="/chat"
+                title="Chat"
+                aria-label={`Chat${unread ? `, ${unread} pesan belum dibaca` : ''}`}
+                className={({ isActive }) =>
+                  `relative hidden size-10 items-center justify-center rounded-full md:flex ${
+                    isActive ? 'bg-brand-100 text-brand-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`
+                }
+              >
+                <ChatIcon className="size-5" />
+                <Badge count={unread} />
+              </NavLink>
+            )}
+            <AccountMenu me={me} />
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-6">
+      <main className={`mx-auto px-4 py-4 md:py-6 ${wide ? 'max-w-[1400px]' : 'max-w-5xl'}`}>
         <Outlet />
       </main>
 
       {/* Navigasi bawah untuk HP, karena kebanyakan orang tua membuka dari HP */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-20 grid h-16 border-t border-slate-200 bg-white md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid h-16 border-t border-slate-200 bg-white md:hidden"
         style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
+        aria-label="Menu utama"
       >
-        {items.map(({ to, label, icon, end }) => (
-          <NavLink key={to} to={to} end={end} className={navClass}>
-            <NavIcon icon={icon} badge={badgeFor(to)} className="size-6" />
+        {items.map(({ to, label, icon: Icon, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center gap-0.5 text-xs font-semibold ${
+                isActive ? 'text-brand-700' : 'text-slate-500'
+              }`
+            }
+          >
+            <span className="relative">
+              <Icon className="size-6" />
+              {to === '/chat' && <Badge count={unread} />}
+            </span>
             {label}
           </NavLink>
         ))}
       </nav>
+    </div>
+  )
+}
+
+// Avatar di pojok kanan atas dengan menu: lihat profil, ganti password, keluar.
+function AccountMenu({ me }) {
+  const { logout } = useAuthActions()
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    const close = (e) => !ref.current?.contains(e.target) && setOpen(false)
+    const onKey = (e) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('pointerdown', close)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', close)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  const item = 'flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm font-semibold hover:bg-slate-100'
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="rounded-full ring-brand-100 hover:ring-4"
+        aria-label="Menu akun"
+        aria-expanded={open}
+      >
+        <Avatar name={me.displayName} src={me.avatarUrl} />
+      </button>
+      {open && (
+        <div role="menu" className="absolute right-0 z-40 mt-2 w-72 rounded-xl bg-white p-2 shadow-xl ring-1 ring-slate-200">
+          <Link to="/profil" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-lg p-2 shadow-sm ring-1 ring-slate-100 hover:bg-slate-50">
+            <Avatar name={me.displayName} src={me.avatarUrl} />
+            <div className="min-w-0">
+              <div className="truncate font-bold">{me.displayName}</div>
+              <div className="text-xs text-slate-500">{ROLE_LABELS[me.role]} · lihat profil</div>
+            </div>
+          </Link>
+          <div className="mt-2 space-y-0.5">
+            <Link to="/ganti-password" onClick={() => setOpen(false)} className={item} role="menuitem">
+              <span className="flex size-9 items-center justify-center rounded-full bg-slate-100">🔑</span>
+              Ganti password
+            </Link>
+            <button onClick={logout} className={item} role="menuitem">
+              <span className="flex size-9 items-center justify-center rounded-full bg-slate-100">
+                <LogoutIcon className="size-5" />
+              </span>
+              Keluar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
