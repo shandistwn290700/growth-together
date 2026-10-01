@@ -1,0 +1,6 @@
+# Caddy otomatis mengurus sertifikat HTTPS (Let's Encrypt) untuk domain di variabel DOMAIN,
+# lalu meneruskan semua request (termasuk WebSocket chat) ke container app.
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000
+}

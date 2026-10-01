@@ -17,5 +17,6 @@ COPY --from=client /app/client/dist /app/client/dist
 
 USER node
 EXPOSE 3000
-# Jalankan migrasi database dulu (aman diulang), lalu nyalakan server.
-CMD ["sh", "-c", "npx sequelize-cli db:migrate && node bin/www.js"]
+# Jalankan migrasi database dan buat akun admin pertama jika belum ada (keduanya aman diulang),
+# lalu nyalakan server.
+CMD ["sh", "-c", "npx sequelize-cli db:migrate && npx sequelize-cli db:seed:all && node bin/www.js"]

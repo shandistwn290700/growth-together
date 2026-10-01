@@ -71,7 +71,8 @@ const cli = (...args) =>
     cli('db:migrate:undo:all');
     cli('db:migrate');
     cli('db:seed:all');
-    console.log('PASS  migrasi up/down/up + seeder');
+    cli('db:seed:all'); // seeder admin harus aman dijalankan ulang
+    console.log('PASS  migrasi up/down/up + seeder (2x)');
 
     const app = require(path.join(SERVER, 'app'));
     server = require('http').createServer(app);

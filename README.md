@@ -52,6 +52,8 @@ Tes menjalankan PostgreSQL sementara (unduhan pertama agak lama), menguji migras
 
 ## Produksi
 
+📘 **Panduan deploy lengkap (Railway atau VPS + Docker, domain, backup, checklist): [docs/DEPLOY.md](docs/DEPLOY.md)**
+
 Di produksi, satu server Node melayani API, Socket.IO, dan tampilan React sekaligus (satu alamat, tanpa CORS).
 
 ```bash
@@ -78,4 +80,4 @@ Variabel lingkungan produksi: `NODE_ENV=production`, `DATABASE_URL`, `JWT_SECRET
 - [x] Tahap 3: Beranda — postingan, upload foto/video, reaksi, komentar
 - [x] Tahap 4: Profil — timeline per kelas, galeri, foto profil
 - [x] Tahap 5: Chat live terenkripsi end-to-end
-- [ ] Tahap 6: rapikan dan deploy (6a siap produksi ✓, 6b deploy ke hosting)
+- [x] Tahap 6: siap produksi + dokumentasi deploy (deploy ke hosting menunggu persetujuan sekolah)
