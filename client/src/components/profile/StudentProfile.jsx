@@ -4,6 +4,7 @@ import api, { getErrorMessage } from '../../lib/api.js'
 import { Alert, Card, Spinner } from '../ui.jsx'
 import PostComposer from '../feed/PostComposer.jsx'
 import { Lightbox } from '../feed/MediaGrid.jsx'
+import { showNickname } from '../../lib/format.js'
 import StudentHeader, { ClassJourney } from './StudentHeader.jsx'
 import { StudentGallery, StudentTimeline } from './StudentTimeline.jsx'
 
@@ -78,7 +79,9 @@ function AboutCard({ profile }) {
     ? new Date(`${student.birthDate}T00:00:00`).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
     : null
 
+  const nickname = showNickname(student)
   const rows = [
+    nickname && ['😊', `Dipanggil ${nickname}`, 'Nama panggilan'],
     student.status === 'graduated'
       ? ['🎓', 'Alumni', 'Sudah lulus']
       : current && ['📚', current.label, `Tahun ajaran ${current.academicYear}`],

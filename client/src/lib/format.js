@@ -16,6 +16,12 @@ export function fullDate(value) {
   return new Date(value).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' })
 }
 
+// Nama panggilan hanya ditampilkan jika ada dan berbeda dari nama lengkap.
+export function showNickname(student) {
+  const nickname = student?.nickname?.trim()
+  return nickname && nickname.toLowerCase() !== student.fullName.trim().toLowerCase() ? nickname : null
+}
+
 export function initial(name) {
   return name?.trim()?.[0]?.toUpperCase() ?? '?'
 }

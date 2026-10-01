@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import api from '../../lib/api.js'
 import { ENROLLMENT_STATUS } from '../../lib/queries.js'
+import { showNickname } from '../../lib/format.js'
 import { Badge } from '../ui.jsx'
 import PhotoUploader from './PhotoUploader.jsx'
 
@@ -9,7 +10,7 @@ function statusBadge(student, history) {
   if (student.status === 'graduated') return <Badge variant="blue">🎓 Alumni</Badge>
   if (student.status === 'inactive') return <Badge>Pindah sekolah</Badge>
   const current = history.findLast((h) => h.status === 'active') ?? history.at(-1)
-  return current ? <Badge variant="green">{current.label}</Badge> : null
+  return current ? <Badge variant="green">📚 {current.label}</Badge> : null
 }
 
 const formatDate = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -17,6 +18,13 @@ const formatDate = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString('id-I
 export default function StudentHeader({ profile, isOwnChild }) {
   const queryClient = useQueryClient()
   const { student, history, canEditPhoto } = profile
+  const nickname = showNickname(student)
+  const badge = statusBadge(student, history)
+  const facts = [
+    `🆔 NIS ${student.nis}`,
+    `🗓️ Masuk ${student.entryYear}`,
+    student.birthDate && `🎂 ${formatDate(student.birthDate)}`,
+  ].filter(Boolean)
 
   const savePhoto = async (uploaded) => {
     await api.put(`/students/${student.id}/photo`, uploaded)
@@ -28,23 +36,38 @@ export default function StudentHeader({ profile, isOwnChild }) {
   return (
     <section className="overflow-hidden rounded-xl bg-white shadow-sm">
       <div className="h-28 bg-gradient-to-r from-brand-700 via-brand-600 to-emerald-400 sm:h-40" />
-      <div className="flex flex-col items-center gap-3 px-5 pb-5 sm:flex-row sm:items-end">
+      <div className="flex flex-col items-center gap-4 px-5 pb-5 sm:flex-row sm:items-end">
         <div className="-mt-16 sm:-mt-20">
           <PhotoUploader name={student.fullName} photoUrl={student.photoUrl} canEdit={canEditPhoto} save={savePhoto} />
         </div>
-        <div className="min-w-0 flex-1 text-center sm:pb-2 sm:text-left">
-          <h1 className="text-2xl font-extrabold">{student.fullName}</h1>
-          {student.nickname && <p className="text-slate-600">“{student.nickname}”</p>}
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-slate-600 sm:justify-start">
-            {statusBadge(student, history)}
-            <span>NIS {student.nis}</span>
-            <span>Masuk {student.entryYear}</span>
-            {student.birthDate && <span>Lahir {formatDate(student.birthDate)}</span>}
+
+        <div className="min-w-0 flex-1 text-center sm:pb-1 sm:text-left">
+          {/* Nama lengkap tebal, nama panggilan di sebelahnya lebih tipis (seperti profil Facebook) */}
+          <h1 className="text-2xl leading-tight font-extrabold break-words sm:text-3xl">
+            {student.fullName}
+            {nickname && <span className="ml-2 text-xl font-semibold whitespace-nowrap text-slate-500 sm:text-2xl">({nickname})</span>}
+          </h1>
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-slate-600 sm:justify-start">
+            {badge}
+            {facts.map((fact, i) => (
+              <span key={fact} className="flex items-center gap-2 whitespace-nowrap">
+                {(badge || i > 0) && (
+                  <span className="text-slate-300" aria-hidden>
+                    ·
+                  </span>
+                )}
+                {fact}
+              </span>
+            ))}
           </div>
         </div>
+
         {isOwnChild && (
-          <Link to="/ganti-password" className="text-sm font-semibold text-brand-700 hover:underline sm:pb-2">
-            Ganti password
+          <Link
+            to="/ganti-password"
+            className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-200 sm:mb-1"
+          >
+            🔑 Ganti password
           </Link>
         )}
       </div>
