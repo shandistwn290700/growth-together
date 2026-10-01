@@ -1,23 +1,15 @@
 import { useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../../lib/api.js'
 import { useMe } from '../../lib/auth.js'
-import { loadLocalKey, unlockChat } from '../../lib/chatSession.js'
+import { unlockChat } from '../../lib/chatSession.js'
 import { Alert, Button, Card, Field, Input, Spinner } from '../ui.jsx'
-import { LocalKeyContext } from './chatState.js'
+import { LocalKeyContext, useChatKeyStatus } from './chatState.js'
 
 // Chat hanya bisa dibuka jika kunci privat di perangkat ini cocok dengan kunci aktif di server.
 // Jika belum (perangkat baru, data browser dihapus, atau akun lama), minta password untuk membukanya.
 export default function ChatGate({ children }) {
-  const { data: me } = useMe()
-  const status = useQuery({
-    queryKey: ['chat-key', me.id],
-    queryFn: async () => {
-      const [local, server] = await Promise.all([loadLocalKey(me.id), api.get('/chat/keys/me').then((r) => r.data)])
-      return { local, hasServerKey: Boolean(server), ready: Boolean(server && local?.keyId === server.id) }
-    },
-    staleTime: Infinity,
-  })
+  const status = useChatKeyStatus()
 
   if (status.isPending) return <Spinner label="Menyiapkan chat terenkripsi…" />
   if (status.isError) return <Alert>{getErrorMessage(status.error)}</Alert>

@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../../lib/api.js'
 import { useMe } from '../../lib/auth.js'
 import { Alert, Avatar, Spinner } from '../ui.jsx'
-import { counterpartName, useChat, useConversations } from './chatState.js'
+import { counterpartName, useChat, useChatContacts, useConversations } from './chatState.js'
 import { useDecrypted } from './useDecrypted.js'
 
 export function OnlineAvatar({ person, size = 'md' }) {
@@ -28,7 +28,9 @@ function shortTime(value) {
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
 }
 
-export default function ConversationList({ activeId }) {
+// onSelect (opsional): dipanggil saat percakapan dipilih, misalnya untuk membuka jendela mini.
+// Tanpa onSelect, setiap percakapan adalah link ke halaman chat.
+export default function ConversationList({ activeId, onSelect }) {
   const { data: me } = useMe()
   const { typing } = useChat()
   const conversations = useConversations()
@@ -49,7 +51,7 @@ export default function ConversationList({ activeId }) {
       </div>
 
       {picking ? (
-        <ContactPicker onPicked={() => setPicking(false)} />
+        <ContactPicker onPicked={() => setPicking(false)} onSelect={onSelect} />
       ) : conversations.isPending ? (
         <Spinner />
       ) : conversations.isError ? (
@@ -67,12 +69,23 @@ export default function ConversationList({ activeId }) {
             const last = c.lastMessage
             const preview = last && previews[last.id]
             const isTyping = Boolean(typing[c.id])
+            const rowClass = `flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 ${
+              Number(activeId) === c.id ? 'bg-brand-50' : ''
+            }`
+            const wrap = (children) =>
+              onSelect ? (
+                <button onClick={() => onSelect(c.id)} className={rowClass}>
+                  {children}
+                </button>
+              ) : (
+                <Link to={`/chat/${c.id}`} className={rowClass}>
+                  {children}
+                </Link>
+              )
             return (
               <li key={c.id}>
-                <Link
-                  to={`/chat/${c.id}`}
-                  className={`flex items-center gap-3 px-4 py-3 hover:bg-slate-50 ${Number(activeId) === c.id ? 'bg-brand-50' : ''}`}
-                >
+                {wrap(
+                  <>
                   <OnlineAvatar person={c.counterpart} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
@@ -99,7 +112,8 @@ export default function ConversationList({ activeId }) {
                       )}
                     </div>
                   </div>
-                </Link>
+                  </>,
+                )}
               </li>
             )
           })}
@@ -109,18 +123,24 @@ export default function ConversationList({ activeId }) {
   )
 }
 
-function ContactPicker({ onPicked }) {
+function ContactPicker({ onPicked, onSelect }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
-  const contacts = useQuery({ queryKey: ['chat-contacts'], queryFn: () => api.get('/chat/contacts').then((r) => r.data) })
+  const contacts = useChatContacts()
+
+  const go = (conversationId) => {
+    onPicked()
+    if (onSelect) onSelect(conversationId)
+    else navigate(`/chat/${conversationId}`)
+  }
 
   const open = useMutation({
     mutationFn: (userId) => api.post('/conversations', { userId }).then((r) => r.data),
     onSuccess: (conversation) => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
-      onPicked()
-      navigate(`/chat/${conversation.id}`)
+      queryClient.invalidateQueries({ queryKey: ['chat-contacts'] })
+      go(conversation.id)
     },
   })
 
@@ -156,11 +176,7 @@ function ContactPicker({ onPicked }) {
           {filtered.map((c) => (
             <li key={c.id}>
               <button
-                onClick={() => {
-                  if (!c.conversationId) return open.mutate(c.id)
-                  onPicked()
-                  navigate(`/chat/${c.conversationId}`)
-                }}
+                onClick={() => (c.conversationId ? go(c.conversationId) : open.mutate(c.id))}
                 disabled={open.isPending}
                 className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-50"
               >

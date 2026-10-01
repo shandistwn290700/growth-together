@@ -33,6 +33,11 @@ export function useAuthActions() {
       localStorage.removeItem(TOKEN_KEY)
       clearLocalKey()
       disconnectSocket()
+      try {
+        sessionStorage.removeItem('gt-chat-dock') // jendela chat mini milik akun ini
+      } catch {
+        // abaikan
+      }
       queryClient.clear()
       navigate('/login', { replace: true })
     },

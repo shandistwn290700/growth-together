@@ -24,7 +24,8 @@ function dayLabel(value) {
 
 const clock = (value) => new Date(value).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
 
-export default function ChatThread({ conversationId }) {
+// compact = tampilan jendela mini di pojok kanan bawah (laptop); headerActions = tombol di kanan header.
+export default function ChatThread({ conversationId, compact = false, autoFocus = false, headerActions = null, onHeaderClick }) {
   const id = Number(conversationId)
   const { data: me } = useMe()
   const { typing } = useChat()
@@ -44,7 +45,8 @@ export default function ChatThread({ conversationId }) {
   useMarkRead(id, items, me.id)
   const { scroller, bottom, onScroll, scrollToBottomNext } = useChatScroll(messages, items.length)
 
-  if (conversations.isPending || messages.isPending) return <Spinner />
+  // Percakapan baru (pesan pertama dari orang lain) mungkin belum ada di daftar yang sedang dimuat ulang.
+  if (conversations.isPending || messages.isPending || (!conversation && conversations.isFetching)) return <Spinner />
   if (!conversation || messages.isError) {
     return (
       <div className="flex flex-1 items-center justify-center p-6">
@@ -56,27 +58,47 @@ export default function ChatThread({ conversationId }) {
   const person = conversation.counterpart
   const isTyping = Boolean(typing[id])
 
+  const identity = (
+    <>
+      <OnlineAvatar person={person} size={compact ? 'sm' : 'md'} />
+      <div className="min-w-0 text-left">
+        <div className={`truncate font-bold ${compact ? 'text-sm' : ''}`}>{counterpartName(person)}</div>
+        <div className={`truncate text-xs ${isTyping || person.online ? 'text-brand-700' : 'text-slate-500'}`}>
+          {isTyping ? 'sedang mengetik…' : person.online ? 'Online' : person.subtitle}
+        </div>
+      </div>
+    </>
+  )
+
   return (
     <div className="flex min-h-0 w-full flex-col">
-      <header className="flex items-center gap-3 border-b border-slate-100 px-3 py-2.5">
-        <Link to="/chat" className="rounded-full px-2 py-1 text-xl text-slate-500 hover:bg-slate-100 md:hidden" aria-label="Kembali">
-          ←
-        </Link>
-        <OnlineAvatar person={person} />
-        <div className="min-w-0">
-          <div className="truncate font-bold">{counterpartName(person)}</div>
-          <div className={`truncate text-xs ${isTyping || person.online ? 'text-brand-700' : 'text-slate-500'}`}>
-            {isTyping ? 'sedang mengetik…' : person.online ? 'Online' : person.subtitle}
-          </div>
-        </div>
+      <header className={`flex items-center gap-2 border-b border-slate-100 ${compact ? 'px-2 py-1.5 shadow-sm' : 'gap-3 px-3 py-2.5'}`}>
+        {!compact && (
+          <Link to="/chat" className="rounded-full px-2 py-1 text-xl text-slate-500 hover:bg-slate-100 md:hidden" aria-label="Kembali">
+            ←
+          </Link>
+        )}
+        {onHeaderClick ? (
+          <button onClick={onHeaderClick} className="flex min-w-0 flex-1 items-center gap-2 rounded-lg p-1 hover:bg-slate-100" title="Kecilkan">
+            {identity}
+          </button>
+        ) : (
+          <div className="flex min-w-0 flex-1 items-center gap-3">{identity}</div>
+        )}
+        {headerActions}
       </header>
 
-      <div ref={scroller} onScroll={onScroll} className="min-h-0 flex-1 space-y-1 overflow-y-auto bg-slate-50 px-3 py-4">
+      <div
+        ref={scroller}
+        onScroll={onScroll}
+        className={`min-h-0 flex-1 space-y-1 overflow-y-auto bg-slate-50 px-3 ${compact ? 'py-2 text-sm' : 'py-4'}`}
+      >
         {messages.isFetchingNextPage && <Spinner label="Memuat pesan lama…" />}
         {!messages.hasNextPage && (
           <p className="mx-auto mb-4 max-w-sm rounded-lg bg-amber-50 px-3 py-2 text-center text-xs text-amber-900">
-            🔒 Pesan di percakapan ini terenkripsi end-to-end. Hanya Anda dan {counterpartName(person)} yang bisa membacanya,
-            pihak sekolah pun tidak.
+            {compact
+              ? '🔒 Terenkripsi end-to-end. Sekolah pun tidak bisa membaca.'
+              : `🔒 Pesan di percakapan ini terenkripsi end-to-end. Hanya Anda dan ${counterpartName(person)} yang bisa membacanya, pihak sekolah pun tidak.`}
           </p>
         )}
         {items.map((m, i) => {
@@ -119,7 +141,7 @@ export default function ChatThread({ conversationId }) {
         <div ref={bottom} />
       </div>
 
-      <Composer conversation={conversation} onSent={scrollToBottomNext} />
+      <Composer conversation={conversation} onSent={scrollToBottomNext} autoFocus={autoFocus} />
     </div>
   )
 }
@@ -180,7 +202,7 @@ function useChatScroll(messages, count) {
   return { scroller, bottom, onScroll, scrollToBottomNext }
 }
 
-function Composer({ conversation, onSent }) {
+function Composer({ conversation, onSent, autoFocus }) {
   const { data: me } = useMe()
   const local = useLocalKey()
   const queryClient = useQueryClient()
@@ -273,6 +295,7 @@ function Composer({ conversation, onSent }) {
           }}
           rows={1}
           maxLength={MAX_LENGTH}
+          autoFocus={autoFocus}
           placeholder="Tulis pesan…"
           className="max-h-32 min-h-10 flex-1 resize-none rounded-2xl bg-slate-100 px-4 py-2 outline-none focus:ring-2 focus:ring-brand-100 [field-sizing:content]"
         />

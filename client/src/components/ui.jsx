@@ -65,7 +65,7 @@ export function Badge({ variant = 'gray', children }) {
   return <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-bold ${BADGE_VARIANTS[variant]}`}>{children}</span>
 }
 
-const AVATAR_SIZES = { sm: 'size-8 text-sm', md: 'size-10 text-base', lg: 'size-16 text-2xl' }
+const AVATAR_SIZES = { sm: 'size-8 text-sm', md: 'size-10 text-base', bubble: 'size-12 text-lg', lg: 'size-16 text-2xl' }
 
 export function Avatar({ name, src, size = 'md' }) {
   const classes = `${AVATAR_SIZES[size]} shrink-0 rounded-full`

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { NavLink, Outlet, Link, useLocation } from 'react-router'
+import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router'
 import { HomeIcon, ChatIcon, UserIcon, SproutIcon, ClassIcon, ShieldIcon, LogoutIcon } from '../components/Icons.jsx'
 import { ROLE_LABELS, useAuthActions, useMe } from '../lib/auth.js'
 import { Avatar } from '../components/ui.jsx'
 import { ChatProvider } from '../components/chat/ChatProvider.jsx'
-import { useUnreadCount } from '../components/chat/chatState.js'
+import ChatDock from '../components/chat/ChatDock.jsx'
+import ConversationList from '../components/chat/ConversationList.jsx'
+import { LocalKeyContext, openConversation, useChat, useUnreadCount } from '../components/chat/chatState.js'
 
 // Tab di tengah bilah atas (laptop) dan menu bawah (HP). Chat hanya untuk guru ↔ orang tua.
 const NAV_ITEMS = [
@@ -77,21 +79,7 @@ function Layout() {
           </nav>
 
           <div className="flex items-center justify-end gap-2 lg:w-[280px]">
-            {canChat && (
-              <NavLink
-                to="/chat"
-                title="Chat"
-                aria-label={`Chat${unread ? `, ${unread} pesan belum dibaca` : ''}`}
-                className={({ isActive }) =>
-                  `relative hidden size-10 items-center justify-center rounded-full md:flex ${
-                    isActive ? 'bg-brand-100 text-brand-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`
-                }
-              >
-                <ChatIcon className="size-5" />
-                <Badge count={unread} />
-              </NavLink>
-            )}
+            {canChat && <ChatMenu unread={unread} />}
             <AccountMenu me={me} />
           </div>
         </div>
@@ -126,16 +114,15 @@ function Layout() {
           </NavLink>
         ))}
       </nav>
+
+      {canChat && <ChatDock />}
     </div>
   )
 }
 
-// Avatar di pojok kanan atas dengan menu: lihat profil, ganti password, keluar.
-function AccountMenu({ me }) {
-  const { logout } = useAuthActions()
-  const [open, setOpen] = useState(false)
+// Tutup popup saat klik di luar atau menekan Escape.
+function useDismiss(open, setOpen) {
   const ref = useRef(null)
-
   useEffect(() => {
     if (!open) return
     const close = (e) => !ref.current?.contains(e.target) && setOpen(false)
@@ -146,7 +133,59 @@ function AccountMenu({ me }) {
       document.removeEventListener('pointerdown', close)
       document.removeEventListener('keydown', onKey)
     }
-  }, [open])
+  }, [open, setOpen])
+  return ref
+}
+
+// Tombol chat di bilah atas: membuka daftar percakapan. Memilih percakapan membuka jendela mini.
+function ChatMenu({ unread }) {
+  const { dock, localKey } = useChat()
+  const navigate = useNavigate()
+  const [open, setOpen] = useState(false)
+  const ref = useDismiss(open, setOpen)
+
+  const select = (conversationId) => {
+    setOpen(false)
+    openConversation(conversationId, { dock, navigate })
+  }
+
+  return (
+    <div ref={ref} className="relative hidden md:block">
+      <button
+        onClick={() => setOpen(!open)}
+        title="Chat"
+        aria-label={`Chat${unread ? `, ${unread} pesan belum dibaca` : ''}`}
+        aria-expanded={open}
+        className={`relative flex size-10 items-center justify-center rounded-full ${
+          open ? 'bg-brand-100 text-brand-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+        }`}
+      >
+        <ChatIcon className="size-5" />
+        <Badge count={unread} />
+      </button>
+      {open && (
+        <div className="absolute right-0 z-40 mt-2 flex h-[min(560px,calc(100dvh-5rem))] w-[360px] flex-col overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-slate-200">
+          <LocalKeyContext.Provider value={localKey}>
+            <ConversationList onSelect={select} />
+          </LocalKeyContext.Provider>
+          <Link
+            to="/chat"
+            onClick={() => setOpen(false)}
+            className="border-t border-slate-100 p-3 text-center text-sm font-semibold text-brand-700 hover:bg-slate-50"
+          >
+            Lihat semua di halaman Chat
+          </Link>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Avatar di pojok kanan atas dengan menu: lihat profil, ganti password, keluar.
+function AccountMenu({ me }) {
+  const { logout } = useAuthActions()
+  const [open, setOpen] = useState(false)
+  const ref = useDismiss(open, setOpen)
 
   const item = 'flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm font-semibold hover:bg-slate-100'
 
