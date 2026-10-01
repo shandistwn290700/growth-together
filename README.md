@@ -41,11 +41,41 @@ Platform portofolio dan perkembangan siswa SDIT, dari kelas 1 sampai lulus. Guru
 
 Riwayat kelas lama tidak dihapus, sehingga timeline siswa tetap utuh dari kelas 1 sampai lulus.
 
+## Tes
+
+```bash
+cd server
+npm test
+```
+
+Tes menjalankan PostgreSQL sementara (unduhan pertama agak lama), menguji migrasi naik/turun, seluruh API, aturan privasi, dan chat terenkripsi lewat HTTP dan Socket.IO. Database aslimu tidak tersentuh.
+
+## Produksi
+
+Di produksi, satu server Node melayani API, Socket.IO, dan tampilan React sekaligus (satu alamat, tanpa CORS).
+
+```bash
+npm run build     # di folder root: instal dependency dan build client
+npm run migrate   # jalankan migrasi database
+npm start         # nyalakan server
+```
+
+Atau dengan Docker (migrasi otomatis dijalankan saat container menyala):
+
+```bash
+docker build -t growth-together .
+docker run -p 3000:3000 --env-file server/.env.production growth-together
+```
+
+Variabel lingkungan produksi: `NODE_ENV=production`, `DATABASE_URL`, `JWT_SECRET`, `CLOUDINARY_*`, dan `DB_SSL=true` jika database mewajibkan SSL. Server menolak menyala jika ada yang kurang. Akun admin pertama dibuat sekali dengan `npm run db:seed --prefix server` (butuh `SEED_ADMIN_USERNAME` dan `SEED_ADMIN_PASSWORD`).
+
+> Proyek ini berada di `htdocs`, tetapi **tidak** dijalankan lewat Apache. File `.htaccess` di root memblokir Apache agar `server/.env` tidak bisa dibuka dari browser. Jangan hapus file itu.
+
 ## Tahapan
 
 - [x] Tahap 1: setup proyek, database, model
 - [x] Tahap 2: login + panel admin (import Excel, kelas, naik kelas)
 - [x] Tahap 3: Beranda — postingan, upload foto/video, reaksi, komentar
 - [x] Tahap 4: Profil — timeline per kelas, galeri, foto profil
-- [ ] Tahap 5: Chat live terenkripsi end-to-end
-- [ ] Tahap 6: rapikan dan deploy
+- [x] Tahap 5: Chat live terenkripsi end-to-end
+- [ ] Tahap 6: rapikan dan deploy (6a siap produksi ✓, 6b deploy ke hosting)

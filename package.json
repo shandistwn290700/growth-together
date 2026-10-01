@@ -1,0 +1,13 @@
+{
+  "name": "growth-together",
+  "private": true,
+  "description": "Platform portofolio dan perkembangan siswa SDIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "npm ci --prefix server --omit=dev && npm ci --prefix client && npm run build --prefix client",
+    "migrate": "npm run db:migrate --prefix server",
+    "start": "npm start --prefix server"
+  }
+}
