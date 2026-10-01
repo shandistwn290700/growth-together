@@ -9,8 +9,74 @@
   --color-brand-600: #0d9488;
   --color-brand-700: #0f766e;
   --color-brand-800: #115e59;
+
+  /* Animasi (dipakai sebagai class: animate-page-in, animate-dock-in, dst.) */
+  --animate-page-in: page-in 220ms ease-out;
+  --animate-dock-in: dock-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-dock-out: dock-out 200ms ease-in forwards;
+  --animate-pop-in: pop-in 200ms cubic-bezier(0.3, 1.4, 0.5, 1);
+  --animate-pop-out: pop-out 160ms ease-in forwards;
+  --animate-menu-in: menu-in 150ms ease-out;
+
+  /* Halaman baru: muncul perlahan sambil sedikit naik */
+  @keyframes page-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+
+  /* Jendela chat mini: lebarnya tumbuh dari 0, sehingga jendela lain bergeser ke kiri dengan mulus */
+  @keyframes dock-in {
+    from {
+      width: 0;
+      opacity: 0;
+      transform: translateY(24px);
+    }
+  }
+  @keyframes dock-out {
+    to {
+      width: 0;
+      opacity: 0;
+      transform: translateY(24px);
+    }
+  }
+
+  /* Gelembung chat */
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+  }
+  @keyframes pop-out {
+    to {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+  }
+
+  /* Dropdown menu */
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.97);
+    }
+  }
 }
 
 body {
   @apply bg-slate-100 text-slate-800 antialiased;
+}
+
+/* Hormati pengaturan "kurangi gerakan" di perangkat pengguna. Durasi tetap > 0 agar
+   event animationend (dipakai untuk menutup jendela chat) tetap terpicu. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
 }

@@ -42,6 +42,12 @@ function Layout() {
   const canChat = me.role !== 'admin'
   // Beranda memakai tata letak 3 kolom yang lebar; halaman lain di tengah.
   const wide = pathname === '/'
+  // Setiap pindah halaman: animasi masuk dan gulir ke atas. Berpindah antar-percakapan di
+  // halaman Chat tidak dihitung pindah halaman, agar daftar percakapan tidak ikut berkedip.
+  const pageKey = pathname.startsWith('/chat') ? '/chat' : pathname
+  useEffect(() => {
+    window.scrollTo({ top: 0 })
+  }, [pageKey])
 
   return (
     <div className="min-h-dvh pb-16 md:pb-0">
@@ -86,7 +92,9 @@ function Layout() {
       </header>
 
       <main className={`mx-auto px-4 py-4 md:py-6 ${wide ? 'max-w-[1400px]' : 'max-w-5xl'}`}>
-        <Outlet />
+        <div key={pageKey} className="animate-page-in">
+          <Outlet />
+        </div>
       </main>
 
       {/* Navigasi bawah untuk HP, karena kebanyakan orang tua membuka dari HP */}
@@ -164,7 +172,7 @@ function ChatMenu({ unread }) {
         <Badge count={unread} />
       </button>
       {open && (
-        <div className="absolute right-0 z-40 mt-2 flex h-[min(560px,calc(100dvh-5rem))] w-[360px] flex-col overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-slate-200">
+        <div className="absolute right-0 z-40 mt-2 flex h-[min(560px,calc(100dvh-5rem))] w-[360px] origin-top-right animate-menu-in flex-col overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-slate-200">
           <LocalKeyContext.Provider value={localKey}>
             <ConversationList onSelect={select} />
           </LocalKeyContext.Provider>
@@ -200,7 +208,7 @@ function AccountMenu({ me }) {
         <Avatar name={me.displayName} src={me.avatarUrl} />
       </button>
       {open && (
-        <div role="menu" className="absolute right-0 z-40 mt-2 w-72 rounded-xl bg-white p-2 shadow-xl ring-1 ring-slate-200">
+        <div role="menu" className="absolute right-0 z-40 mt-2 w-72 origin-top-right animate-menu-in rounded-xl bg-white p-2 shadow-xl ring-1 ring-slate-200">
           <Link to="/profil" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-lg p-2 shadow-sm ring-1 ring-slate-100 hover:bg-slate-50">
             <Avatar name={me.displayName} src={me.avatarUrl} />
             <div className="min-w-0">

@@ -70,54 +70,80 @@ function HeaderButton({ label, onClick, children }) {
   )
 }
 
+// Elemen yang ditutup tetap tampil sampai animasi keluarnya selesai, baru kemudian dihapus.
+function useExitAnimation() {
+  const [afterExit, setAfterExit] = useState(null)
+  const leave = (action) => setAfterExit(() => action)
+  const onAnimationEnd = (e) => {
+    if (e.target === e.currentTarget && afterExit) afterExit()
+  }
+  // Cadangan jika event animationend tidak terpicu (misalnya tab sedang di latar belakang).
+  useEffect(() => {
+    if (!afterExit) return
+    const timer = setTimeout(afterExit, 400)
+    return () => clearTimeout(timer)
+  }, [afterExit])
+  return { leaving: Boolean(afterExit), leave, onAnimationEnd }
+}
+
 function ChatWindow({ item, conversation }) {
   const { dock } = useChat()
   const navigate = useNavigate()
+  const { leaving, leave, onAnimationEnd } = useExitAnimation()
   const name = conversation ? counterpartName(conversation.counterpart) : 'percakapan'
+  const minimize = () => leave(() => dock.minimize(item.id))
 
   return (
+    // Lebar jendela dianimasikan dari/ke 0 sehingga jendela di sebelahnya ikut bergeser dengan mulus.
+    // Isi jendela tetap selebar penuh agar tidak ikut "menyempit" selama animasi.
     <section
       aria-label={`Chat dengan ${name}`}
-      className="pointer-events-auto flex h-[455px] max-h-[calc(100dvh-5rem)] flex-col overflow-hidden rounded-t-xl bg-white shadow-2xl ring-1 ring-slate-200"
+      onAnimationEnd={onAnimationEnd}
+      className={`pointer-events-auto h-[455px] max-h-[calc(100dvh-5rem)] overflow-hidden rounded-t-xl bg-white shadow-2xl ring-1 ring-slate-200 ${
+        leaving ? 'pointer-events-none animate-dock-out' : 'animate-dock-in'
+      }`}
       style={{ width: WINDOW_WIDTH }}
     >
-      <ChatThread
-        conversationId={item.id}
-        compact
-        autoFocus={item.focus}
-        onHeaderClick={() => dock.minimize(item.id)}
-        headerActions={
-          <div className="flex shrink-0 items-center">
-            <HeaderButton
-              label="Buka di halaman Chat"
-              onClick={() => {
-                dock.close(item.id)
-                navigate(`/chat/${item.id}`)
-              }}
-            >
-              ⤢
-            </HeaderButton>
-            <HeaderButton label="Kecilkan" onClick={() => dock.minimize(item.id)}>
-              –
-            </HeaderButton>
-            <HeaderButton label="Tutup" onClick={() => dock.close(item.id)}>
-              ×
-            </HeaderButton>
-          </div>
-        }
-      />
+      <div className="flex h-full flex-col" style={{ width: WINDOW_WIDTH }}>
+        <ChatThread
+          conversationId={item.id}
+          compact
+          autoFocus={item.focus}
+          onHeaderClick={minimize}
+          headerActions={
+            <div className="flex shrink-0 items-center">
+              <HeaderButton
+                label="Buka di halaman Chat"
+                onClick={() => {
+                  dock.close(item.id)
+                  navigate(`/chat/${item.id}`)
+                }}
+              >
+                ⤢
+              </HeaderButton>
+              <HeaderButton label="Kecilkan" onClick={minimize}>
+                –
+              </HeaderButton>
+              <HeaderButton label="Tutup" onClick={() => leave(() => dock.close(item.id))}>
+                ×
+              </HeaderButton>
+            </div>
+          }
+        />
+      </div>
     </section>
   )
 }
 
 function Bubble({ item, conversation }) {
   const { dock } = useChat()
+  const { leaving, leave, onAnimationEnd } = useExitAnimation()
   const person = conversation?.counterpart
   const name = person ? counterpartName(person) : 'Chat'
   const unread = conversation?.unreadCount ?? 0
 
   return (
-    <div className="group relative">
+    <div onAnimationEnd={onAnimationEnd} className={`group relative ${leaving ? 'animate-pop-out' : 'animate-pop-in'}`}>
       <button
         onClick={() => dock.open(item.id)}
         title={name}
@@ -133,7 +159,7 @@ function Bubble({ item, conversation }) {
         </span>
       )}
       <button
-        onClick={() => dock.close(item.id)}
+        onClick={() => leave(() => dock.close(item.id))}
         aria-label={`Tutup chat dengan ${name}`}
         className="absolute -top-1 -right-1 hidden size-5 items-center justify-center rounded-full bg-white text-xs text-slate-600 shadow ring-1 ring-slate-200 group-hover:flex focus:flex"
       >
