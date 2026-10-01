@@ -13,6 +13,7 @@ module.exports = (sequelize, DataTypes) => {
         as: 'teachingClassrooms',
       });
       User.hasMany(models.Post, { foreignKey: 'authorId', as: 'posts' });
+      User.hasMany(models.ChatKey, { foreignKey: 'userId', as: 'chatKeys' });
     }
 
     // Jangan pernah kirim hash password ke client.

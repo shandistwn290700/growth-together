@@ -1,5 +1,7 @@
-const { User } = require('../models');
+const { User, sequelize } = require('../models');
 const { generateTempPassword } = require('../helpers/password');
+const { retireKeys } = require('../services/chatKeys');
+const { disconnectUser } = require('../socket');
 
 class UserController {
   static async listTeachers(req, res) {
@@ -12,7 +14,7 @@ class UserController {
   }
 
   // Password sementara hanya ditampilkan sekali ke admin.
-  // Catatan: riwayat chat terenkripsi milik pengguna ini tidak bisa dibuka lagi setelah reset.
+  // Kunci chat lama ikut dinonaktifkan: riwayat chat terenkripsi pengguna ini tidak bisa dibuka lagi.
   static async resetPassword(req, res) {
     const user = await User.findByPk(req.params.id);
     if (!user) throw { name: 'NotFound', message: 'Pengguna tidak ditemukan' };
@@ -21,9 +23,13 @@ class UserController {
     }
 
     const password = generateTempPassword();
-    user.password = password;
-    user.mustChangePassword = true;
-    await user.save();
+    await sequelize.transaction(async (transaction) => {
+      user.password = password;
+      user.mustChangePassword = true;
+      await user.save({ transaction });
+      await retireKeys(user.id, transaction);
+    });
+    disconnectUser(user.id);
     res.json({ username: user.username, password });
   }
 
@@ -33,6 +39,7 @@ class UserController {
     if (user.id === req.user.id) throw { name: 'BadRequest', message: 'Anda tidak bisa menonaktifkan akun sendiri' };
 
     await user.update({ isActive: Boolean(req.body?.isActive) });
+    if (!user.isActive) disconnectUser(user.id);
     res.json(user);
   }
 }

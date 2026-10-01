@@ -4,6 +4,7 @@ const KNOWN_ERRORS = {
   Unauthorized: 401,
   Forbidden: 403,
   NotFound: 404,
+  Conflict: 409,
 };
 
 // Pesan untuk constraint unik gabungan (dibuat di migrasi, jadi tidak punya pesan bawaan di model).

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { del } from 'idb-keyval'
 
 export const TOKEN_KEY = 'gt_access_token'
 
@@ -17,6 +18,7 @@ api.interceptors.response.use(
     const isLoginRequest = error.config?.url === '/auth/login'
     if (error.response?.status === 401 && !isLoginRequest) {
       localStorage.removeItem(TOKEN_KEY)
+      del('gt-chat-private-key').catch(() => {}) // kunci chat di perangkat ini ikut dihapus
       if (window.location.pathname !== '/login') window.location.assign('/login')
     }
     return Promise.reject(error)

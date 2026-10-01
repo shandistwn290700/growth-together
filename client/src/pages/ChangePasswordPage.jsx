@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { useMutation } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../lib/api.js'
 import { useAuthActions, useMe } from '../lib/auth.js'
+import { relockForPasswordChange, setupChatAfterLogin } from '../lib/chatSession.js'
 import { Alert, Button, Field, Input } from '../components/ui.jsx'
 
 export default function ChangePasswordPage() {
@@ -13,11 +14,15 @@ export default function ChangePasswordPage() {
   const [localError, setLocalError] = useState('')
 
   const change = useMutation({
-    mutationFn: (body) => api.patch('/auth/password', body).then((res) => res.data),
-    onSuccess: (data) => {
+    mutationFn: async (body) => {
+      // Kunci chat dikunci ulang dengan password baru agar riwayat chat tetap bisa dibuka.
+      const chatKey = await relockForPasswordChange(me, body.currentPassword, body.newPassword)
+      const { data } = await api.patch('/auth/password', { ...body, chatKey })
       saveSession(data)
-      navigate('/', { replace: true })
+      await setupChatAfterLogin(data.user, body.newPassword)
+      return data
     },
+    onSuccess: () => navigate('/', { replace: true }),
   })
 
   const update = (e) => setForm({ ...form, [e.target.name]: e.target.value })
@@ -30,7 +35,8 @@ export default function ChangePasswordPage() {
     change.mutate({ currentPassword: form.currentPassword, newPassword: form.newPassword })
   }
 
-  const error = localError || (change.isError && getErrorMessage(change.error))
+  const error =
+    localError || (change.isError && (change.error.response ? getErrorMessage(change.error) : change.error.message))
 
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">

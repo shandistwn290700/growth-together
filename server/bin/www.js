@@ -1,11 +1,13 @@
 const http = require('http');
 const app = require('../app');
 const { sequelize } = require('../models');
+const { initSocket } = require('../socket');
 
 const port = Number(process.env.PORT) || 3000;
 
-// Pakai http.createServer (bukan app.listen) agar Socket.IO bisa dipasang di server yang sama nanti.
+// Express dan Socket.IO berjalan di server HTTP yang sama.
 const server = http.createServer(app);
+initSocket(server);
 
 sequelize
   .authenticate()

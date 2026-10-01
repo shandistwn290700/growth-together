@@ -3,6 +3,8 @@ const { comparePassword } = require('../helpers/bcrypt');
 const { signToken } = require('../helpers/jwt');
 const toUserDto = require('../helpers/userDto');
 const { validateUploadedMedia, deleteFromCloudinary } = require('../helpers/media');
+const { activeKeyOf, parseWrappedKey } = require('../services/chatKeys');
+const { sequelize } = require('../models');
 
 class AuthController {
   static async login(req, res) {
@@ -46,6 +48,15 @@ class AuthController {
     res.json(toUserDto(req.user));
   }
 
+  // POST /auth/verify-password — memastikan password benar sebelum browser membuat/membuka kunci chat,
+  // supaya kunci tidak terkunci dengan password yang salah ketik.
+  static async verifyPassword(req, res) {
+    if (!(await comparePassword(String(req.body?.password ?? ''), req.user.password))) {
+      throw { name: 'BadRequest', message: 'Password salah' };
+    }
+    res.json({ ok: true });
+  }
+
   static async changePassword(req, res) {
     const { currentPassword, newPassword } = req.body ?? {};
     if (!currentPassword || !newPassword) {
@@ -58,9 +69,20 @@ class AuthController {
       throw { name: 'BadRequest', message: 'Password baru harus berbeda dari password lama' };
     }
 
-    req.user.password = String(newPassword);
-    req.user.mustChangePassword = false;
-    await req.user.save();
+    // Kunci chat dikunci ulang di browser dengan password baru dan disimpan bersamaan,
+    // agar riwayat chat tetap bisa dibuka. Tanpa ini kunci lama akan hilang.
+    await sequelize.transaction(async (transaction) => {
+      const chatKey = await activeKeyOf(req.user.id, transaction);
+      if (chatKey) {
+        if (!req.body?.chatKey) {
+          throw { name: 'BadRequest', message: 'Kunci chat perlu diperbarui. Muat ulang halaman lalu coba lagi' };
+        }
+        await chatKey.update(parseWrappedKey(req.body.chatKey), { transaction });
+      }
+      req.user.password = String(newPassword);
+      req.user.mustChangePassword = false;
+      await req.user.save({ transaction });
+    });
 
     // Token lama otomatis tidak berlaku, jadi kirim token baru.
     res.json({ access_token: signToken({ id: req.user.id }), user: toUserDto(req.user) });

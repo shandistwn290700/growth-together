@@ -1,6 +1,8 @@
 import { NavLink, Outlet, Link } from 'react-router'
 import { HomeIcon, ChatIcon, UserIcon, SproutIcon, ClassIcon, ShieldIcon, LogoutIcon } from '../components/Icons.jsx'
 import { ROLE_LABELS, useAuthActions, useMe } from '../lib/auth.js'
+import { ChatProvider } from '../components/chat/ChatProvider.jsx'
+import { useUnreadCount } from '../components/chat/chatState.js'
 
 // Menu yang tampil tergantung peran. Chat hanya untuk guru ↔ orang tua.
 const NAV_ITEMS = [
@@ -21,10 +23,34 @@ function navClass({ isActive }) {
   ].join(' ')
 }
 
+// Ikon menu dengan badge jumlah pesan belum dibaca (khusus menu Chat).
+function NavIcon({ icon: Icon, badge, className }) {
+  return (
+    <span className="relative">
+      <Icon className={className} />
+      {badge > 0 && (
+        <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
+    </span>
+  )
+}
+
 export default function MainLayout() {
+  return (
+    <ChatProvider>
+      <Layout />
+    </ChatProvider>
+  )
+}
+
+function Layout() {
   const { data: me } = useMe()
   const { logout } = useAuthActions()
+  const { data: unread = 0 } = useUnreadCount()
   const items = NAV_ITEMS.filter((item) => item.roles.includes(me.role))
+  const badgeFor = (to) => (to === '/chat' ? unread : 0)
 
   return (
     <div className="min-h-dvh pb-16 md:pb-0">
@@ -35,9 +61,9 @@ export default function MainLayout() {
             <span className="hidden text-lg font-extrabold tracking-tight sm:inline">Growth Together</span>
           </Link>
           <nav className="hidden gap-1 md:flex">
-            {items.map(({ to, label, icon: Icon, end }) => (
+            {items.map(({ to, label, icon, end }) => (
               <NavLink key={to} to={to} end={end} className={navClass}>
-                <Icon className="size-5" />
+                <NavIcon icon={icon} badge={badgeFor(to)} className="size-5" />
                 {label}
               </NavLink>
             ))}
@@ -68,9 +94,9 @@ export default function MainLayout() {
         className="fixed inset-x-0 bottom-0 z-20 grid h-16 border-t border-slate-200 bg-white md:hidden"
         style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
       >
-        {items.map(({ to, label, icon: Icon, end }) => (
+        {items.map(({ to, label, icon, end }) => (
           <NavLink key={to} to={to} end={end} className={navClass}>
-            <Icon className="size-6" />
+            <NavIcon icon={icon} badge={badgeFor(to)} className="size-6" />
             {label}
           </NavLink>
         ))}

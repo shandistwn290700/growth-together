@@ -1,6 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import api, { TOKEN_KEY } from './api.js'
+import { clearLocalKey } from './chatSession.js'
+import { disconnectSocket } from './socket.js'
 
 export const ROLE_LABELS = { admin: 'Admin', teacher: 'Guru', parent: 'Orang Tua' }
 
@@ -29,6 +31,8 @@ export function useAuthActions() {
     },
     logout() {
       localStorage.removeItem(TOKEN_KEY)
+      clearLocalKey()
+      disconnectSocket()
       queryClient.clear()
       navigate('/login', { replace: true })
     },

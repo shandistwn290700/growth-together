@@ -1,11 +1,9 @@
 const { verifyToken } = require('../helpers/jwt');
 const { User, Student } = require('../models');
 
-module.exports = async (req, res, next) => {
-  const [type, token] = (req.headers.authorization || '').split(' ');
-  if (type !== 'Bearer' || !token) {
-    throw { name: 'Unauthorized', message: 'Silakan login terlebih dahulu' };
-  }
+// Dipakai oleh API (header Authorization) dan Socket.IO (handshake), agar aturannya sama persis.
+async function userFromToken(token) {
+  if (!token) throw { name: 'Unauthorized', message: 'Silakan login terlebih dahulu' };
 
   const payload = verifyToken(token);
   const user = await User.findByPk(payload.id, { include: { model: Student, as: 'student' } });
@@ -16,7 +14,15 @@ module.exports = async (req, res, next) => {
   if (payload.iat < Math.floor(user.passwordChangedAt.getTime() / 1000)) {
     throw { name: 'Unauthorized', message: 'Password telah diganti, silakan login kembali' };
   }
+  return user;
+}
 
-  req.user = user;
+async function authentication(req, res, next) {
+  const [type, token] = (req.headers.authorization || '').split(' ');
+  if (type !== 'Bearer') throw { name: 'Unauthorized', message: 'Silakan login terlebih dahulu' };
+  req.user = await userFromToken(token);
   next();
-};
+}
+
+module.exports = authentication;
+module.exports.userFromToken = userFromToken;

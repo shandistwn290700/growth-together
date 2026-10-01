@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router'
 import { useMutation } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../lib/api.js'
 import { hasToken, useAuthActions } from '../lib/auth.js'
+import { setupChatAfterLogin } from '../lib/chatSession.js'
 import { SproutIcon } from '../components/Icons.jsx'
 import { Alert, Button, Field, Input } from '../components/ui.jsx'
 
@@ -12,11 +13,14 @@ export default function LoginPage() {
   const [form, setForm] = useState({ username: '', password: '' })
 
   const login = useMutation({
-    mutationFn: (body) => api.post('/auth/login', body).then((res) => res.data),
-    onSuccess: (data) => {
+    mutationFn: async (body) => {
+      const { data } = await api.post('/auth/login', body)
       saveSession(data)
-      navigate(data.user.mustChangePassword ? '/ganti-password' : '/', { replace: true })
+      // Password hanya ada di memori saat ini, jadi kunci chat dibuka (atau dibuat) sekarang.
+      await setupChatAfterLogin(data.user, body.password)
+      return data
     },
+    onSuccess: (data) => navigate(data.user.mustChangePassword ? '/ganti-password' : '/', { replace: true }),
   })
 
   if (hasToken()) return <Navigate to="/" replace />

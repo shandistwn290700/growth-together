@@ -25,6 +25,7 @@ export default function App() {
           <Route path="siswa/:id" element={<StudentProfilePage />} />
           <Route element={<RequireRole roles={['teacher', 'parent']} />}>
             <Route path="chat" element={<ChatPage />} />
+            <Route path="chat/:conversationId" element={<ChatPage />} />
           </Route>
           <Route element={<RequireRole roles={['admin', 'teacher']} />}>
             <Route path="kelas" element={<ClassroomsPage />} />
