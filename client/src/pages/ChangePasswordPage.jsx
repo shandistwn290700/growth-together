@@ -40,7 +40,7 @@ export default function ChangePasswordPage() {
 
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">
-      <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-2xl bg-white p-6 shadow-sm">
+      <form onSubmit={submit} className="w-full max-w-sm animate-auth-in space-y-4 rounded-2xl bg-white p-6 shadow-sm">
         <div>
           <h1 className="text-xl font-extrabold text-brand-700">Ganti Password</h1>
           {me?.mustChangePassword && (

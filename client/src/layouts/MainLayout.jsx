@@ -3,6 +3,8 @@ import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router'
 import { HomeIcon, ChatIcon, UserIcon, SproutIcon, ClassIcon, ShieldIcon, LogoutIcon } from '../components/Icons.jsx'
 import { ROLE_LABELS, useAuthActions, useMe } from '../lib/auth.js'
 import { Avatar } from '../components/ui.jsx'
+import AuthSplash from '../components/AuthSplash.jsx'
+import { motionDelay } from '../lib/motion.js'
 import { ChatProvider } from '../components/chat/ChatProvider.jsx'
 import ChatDock from '../components/chat/ChatDock.jsx'
 import ConversationList from '../components/chat/ConversationList.jsx'
@@ -40,6 +42,14 @@ function Layout() {
   const { data: unread = 0 } = useUnreadCount()
   const items = NAV_ITEMS.filter((item) => item.roles.includes(me.role))
   const canChat = me.role !== 'admin'
+  const { logout } = useAuthActions()
+  const [farewell, setFarewell] = useState(false)
+
+  // Logout: tampilkan layar perpisahan sebentar, lalu hapus sesi dan kembali ke halaman login.
+  const startLogout = () => {
+    setFarewell(true)
+    setTimeout(logout, motionDelay(800))
+  }
   // Beranda memakai tata letak 3 kolom yang lebar; halaman lain di tengah.
   const wide = pathname === '/'
   // Setiap pindah halaman: animasi masuk dan gulir ke atas. Berpindah antar-percakapan di
@@ -86,7 +96,7 @@ function Layout() {
 
           <div className="flex items-center justify-end gap-2 lg:w-[280px]">
             {canChat && <ChatMenu unread={unread} />}
-            <AccountMenu me={me} />
+            <AccountMenu me={me} onLogout={startLogout} />
           </div>
         </div>
       </header>
@@ -124,6 +134,7 @@ function Layout() {
       </nav>
 
       {canChat && <ChatDock />}
+      {farewell && <AuthSplash title={`Sampai jumpa, ${me.displayName} 👋`} subtitle="Semoga harimu menyenangkan" />}
     </div>
   )
 }
@@ -190,8 +201,7 @@ function ChatMenu({ unread }) {
 }
 
 // Avatar di pojok kanan atas dengan menu: lihat profil, ganti password, keluar.
-function AccountMenu({ me }) {
-  const { logout } = useAuthActions()
+function AccountMenu({ me, onLogout }) {
   const [open, setOpen] = useState(false)
   const ref = useDismiss(open, setOpen)
 
@@ -221,7 +231,14 @@ function AccountMenu({ me }) {
               <span className="flex size-9 items-center justify-center rounded-full bg-slate-100">🔑</span>
               Ganti password
             </Link>
-            <button onClick={logout} className={item} role="menuitem">
+            <button
+              onClick={() => {
+                setOpen(false)
+                onLogout()
+              }}
+              className={item}
+              role="menuitem"
+            >
               <span className="flex size-9 items-center justify-center rounded-full bg-slate-100">
                 <LogoutIcon className="size-5" />
               </span>

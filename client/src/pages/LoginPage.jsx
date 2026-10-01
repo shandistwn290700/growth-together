@@ -1,16 +1,20 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import { useMutation } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../lib/api.js'
 import { hasToken, useAuthActions } from '../lib/auth.js'
 import { setupChatAfterLogin } from '../lib/chatSession.js'
+import { motionDelay } from '../lib/motion.js'
 import { SproutIcon } from '../components/Icons.jsx'
 import { Alert, Button, Field, Input } from '../components/ui.jsx'
+import AuthSplash from '../components/AuthSplash.jsx'
 
 export default function LoginPage() {
   const navigate = useNavigate()
   const { saveSession } = useAuthActions()
   const [form, setForm] = useState({ username: '', password: '' })
+  const [welcome, setWelcome] = useState(null) // user yang baru login → tampilkan layar sambutan
+  const [shake, setShake] = useState(false)
 
   const login = useMutation({
     mutationFn: async (body) => {
@@ -20,10 +24,30 @@ export default function LoginPage() {
       await setupChatAfterLogin(data.user, body.password)
       return data
     },
-    onSuccess: (data) => navigate(data.user.mustChangePassword ? '/ganti-password' : '/', { replace: true }),
+    onSuccess: (data) => setWelcome(data.user),
+    onError: () => setShake(true),
   })
 
-  if (hasToken()) return <Navigate to="/" replace />
+  // Setelah layar sambutan tampil sebentar, masuk ke aplikasi.
+  useEffect(() => {
+    if (!welcome) return
+    const timer = setTimeout(
+      () => navigate(welcome.mustChangePassword ? '/ganti-password' : '/', { replace: true }),
+      motionDelay(1100),
+    )
+    return () => clearTimeout(timer)
+  }, [welcome, navigate])
+
+  if (welcome) {
+    return (
+      <AuthSplash
+        title={`Assalamu'alaikum, ${welcome.displayName}`}
+        subtitle={welcome.mustChangePassword ? 'Silakan buat password baru terlebih dahulu' : 'Selamat datang di Growth Together'}
+      />
+    )
+  }
+  // Sudah login sebelumnya (bukan baru saja login di halaman ini): langsung ke beranda.
+  if (hasToken() && login.isIdle) return <Navigate to="/" replace />
 
   const update = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
@@ -31,30 +55,37 @@ export default function LoginPage() {
     <div className="flex min-h-dvh items-center justify-center bg-gradient-to-b from-brand-50 to-slate-100 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <SproutIcon className="mx-auto size-14 text-brand-700" />
-          <h1 className="mt-2 text-3xl font-extrabold text-brand-700">Growth Together</h1>
-          <p className="mt-1 text-sm text-slate-600">Bersama mendampingi tumbuh kembang ananda</p>
+          <SproutIcon className="mx-auto size-14 origin-bottom animate-sprout-grow text-brand-700" />
+          <h1 className="mt-2 animate-rise text-3xl font-extrabold text-brand-700" style={{ animationDelay: '150ms' }}>
+            Growth Together
+          </h1>
+          <p className="mt-1 animate-rise text-sm text-slate-600" style={{ animationDelay: '250ms' }}>
+            Bersama mendampingi tumbuh kembang ananda
+          </p>
         </div>
 
-        <form
-          className="space-y-4 rounded-2xl bg-white p-6 shadow-sm"
-          onSubmit={(e) => {
-            e.preventDefault()
-            login.mutate(form)
-          }}
-        >
-          {login.isError && <Alert>{getErrorMessage(login.error)}</Alert>}
-          <Field label="Username" hint="Orang tua: gunakan NIS ananda">
-            <Input name="username" value={form.username} onChange={update} autoComplete="username" required autoFocus />
-          </Field>
-          <Field label="Password">
-            <Input name="password" type="password" value={form.password} onChange={update} autoComplete="current-password" required />
-          </Field>
-          <Button type="submit" className="w-full" disabled={login.isPending}>
-            {login.isPending ? 'Masuk…' : 'Masuk'}
-          </Button>
-          <p className="text-center text-xs text-slate-500">Lupa password? Hubungi admin sekolah.</p>
-        </form>
+        <div className="animate-auth-in" style={{ animationDelay: '300ms' }}>
+          <form
+            className={`space-y-4 rounded-2xl bg-white p-6 shadow-sm ${shake ? 'animate-shake' : ''}`}
+            onAnimationEnd={() => setShake(false)}
+            onSubmit={(e) => {
+              e.preventDefault()
+              login.mutate(form)
+            }}
+          >
+            {login.isError && <Alert>{getErrorMessage(login.error)}</Alert>}
+            <Field label="Username" hint="Orang tua: gunakan NIS ananda">
+              <Input name="username" value={form.username} onChange={update} autoComplete="username" required autoFocus />
+            </Field>
+            <Field label="Password">
+              <Input name="password" type="password" value={form.password} onChange={update} autoComplete="current-password" required />
+            </Field>
+            <Button type="submit" className="w-full" disabled={login.isPending}>
+              {login.isPending ? 'Masuk…' : 'Masuk'}
+            </Button>
+            <p className="text-center text-xs text-slate-500">Lupa password? Hubungi admin sekolah.</p>
+          </form>
+        </div>
       </div>
     </div>
   )
