@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { Camera } from 'lucide-react'
 import { getErrorMessage } from '../../lib/api.js'
 import { uploadToCloudinary, validateFile } from '../../lib/upload.js'
 
@@ -45,11 +46,11 @@ export default function PhotoUploader({ name, photoUrl, canEdit, save }) {
           <button
             onClick={() => input.current.click()}
             disabled={upload.isPending}
-            className="absolute right-1 bottom-1 flex size-10 items-center justify-center rounded-full bg-slate-100 text-lg shadow ring-2 ring-white hover:bg-slate-200"
+            className="absolute right-1 bottom-1 flex size-10 items-center justify-center rounded-full bg-brand-600 text-white shadow ring-4 ring-white hover:bg-brand-700"
             aria-label="Ganti foto profil"
             title="Ganti foto profil"
           >
-            📷
+            <Camera className="size-5" strokeWidth={2.2} />
           </button>
         </>
       )}

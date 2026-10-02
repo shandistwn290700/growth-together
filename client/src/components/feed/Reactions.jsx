@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../../lib/api.js'
 import { REACTIONS, reactionOf } from '../../lib/reactions.js'
 import { updatePost } from '../../lib/feedCache.js'
+import { ThumbsUp, X } from 'lucide-react'
 import { Avatar, Spinner } from '../ui.jsx'
 
 // Tombol reaksi ala Facebook: klik = Suka/batal, tahan (HP) atau arahkan kursor (laptop) = pilih reaksi lain.
@@ -77,7 +78,15 @@ export function ReactionButton({ post }) {
           mine ? mine.color : 'text-slate-600'
         }`}
       >
-        <span className="text-lg leading-none">{mine ? mine.emoji : '👍'}</span>
+        {/* "Suka" memakai ikon jempol bertema (terisi saat dipilih); reaksi lain memakai emoji */}
+        {!mine || mine.type === 'like' ? (
+          <ThumbsUp
+            className={`size-5 ${mine ? 'fill-brand-600 text-brand-600' : 'text-brand-600'}`}
+            strokeWidth={2.2}
+          />
+        ) : (
+          <span className="text-lg leading-none">{mine.emoji}</span>
+        )}
         {mine ? mine.label : 'Suka'}
       </button>
     </div>
@@ -123,8 +132,8 @@ function ReactorList({ postId, onClose }) {
     <div className="absolute top-full left-0 z-10 mt-1 w-64 rounded-xl bg-white p-2 shadow-lg ring-1 ring-slate-200">
       <div className="flex items-center justify-between px-1 pb-1">
         <span className="text-sm font-bold">Sudah merespons</span>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-700" aria-label="Tutup">
-          ×
+        <button onClick={onClose} className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Tutup">
+          <X className="size-4" />
         </button>
       </div>
       {list.isPending ? (

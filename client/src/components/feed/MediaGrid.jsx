@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react'
 
 function VideoPlayer({ media, className = '' }) {
   return (
@@ -16,7 +17,9 @@ function Thumb({ media, onOpen, overlay }) {
       <img src={media.type === 'video' ? media.posterUrl : media.url} alt="" loading="lazy" className="size-full object-cover" />
       {media.type === 'video' && (
         <span className="absolute inset-0 flex items-center justify-center">
-          <span className="flex size-12 items-center justify-center rounded-full bg-black/55 text-xl text-white">▶</span>
+          <span className="flex size-12 items-center justify-center rounded-full bg-brand-600/90 text-white shadow-lg">
+            <Play className="ml-0.5 size-6 fill-white" />
+          </span>
         </span>
       )}
       {overlay && (
@@ -96,8 +99,12 @@ export function Lightbox({ media, index, onChange }) {
           <img src={current.url} alt="" className="max-h-[85vh] max-w-full object-contain" />
         )}
       </div>
-      <button onClick={close} className="absolute top-3 right-3 size-10 rounded-full bg-white/15 text-2xl text-white hover:bg-white/25" aria-label="Tutup">
-        ×
+      <button
+        onClick={close}
+        className="absolute top-3 right-3 flex size-10 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25"
+        aria-label="Tutup"
+      >
+        <X className="size-6" />
       </button>
       {media.length > 1 && (
         <>
@@ -106,20 +113,20 @@ export function Lightbox({ media, index, onChange }) {
               e.stopPropagation()
               go(-1)
             }}
-            className="absolute left-3 size-10 rounded-full bg-white/15 text-xl text-white hover:bg-white/25"
+            className="absolute left-3 flex size-10 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25"
             aria-label="Sebelumnya"
           >
-            ‹
+            <ChevronLeft className="size-6" />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation()
               go(1)
             }}
-            className="absolute right-3 size-10 rounded-full bg-white/15 text-xl text-white hover:bg-white/25"
+            className="absolute right-3 flex size-10 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25"
             aria-label="Berikutnya"
           >
-            ›
+            <ChevronRight className="size-6" />
           </button>
           <span className="absolute bottom-4 rounded-full bg-white/15 px-3 py-1 text-sm text-white">
             {index + 1} / {media.length}

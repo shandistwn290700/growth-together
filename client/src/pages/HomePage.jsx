@@ -4,6 +4,7 @@ import { useMe } from '../lib/auth.js'
 import { FEED_KEY } from '../lib/feedCache.js'
 import { useInfiniteScroll } from '../lib/useInfiniteScroll.js'
 import { Alert, Button, Card, Spinner } from '../components/ui.jsx'
+import { IconBadge, SproutIcon } from '../components/Icons.jsx'
 import PostComposer from '../components/feed/PostComposer.jsx'
 import PostCard from '../components/feed/PostCard.jsx'
 import { LeftSidebar, RightSidebar } from '../components/home/Sidebars.jsx'
@@ -43,9 +44,9 @@ function Feed({ me, feed, posts, sentinel }) {
       ) : feed.isError ? (
         <Alert>{getErrorMessage(feed.error)}</Alert>
       ) : posts.length === 0 ? (
-        <Card className="text-center">
-          <p className="text-4xl">🌱</p>
-          <p className="mt-2 font-bold">Belum ada postingan</p>
+        <Card className="flex flex-col items-center text-center">
+          <IconBadge icon={SproutIcon} size="xl" tone="soft" />
+          <p className="mt-3 font-bold">Belum ada postingan</p>
           <p className="text-sm text-slate-600">
             {me.role === 'parent'
               ? 'Bagikan momen pertama ananda, atau tunggu kabar dari wali kelas.'

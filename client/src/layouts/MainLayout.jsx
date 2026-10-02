@@ -1,6 +1,16 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router'
-import { HomeIcon, ChatIcon, UserIcon, SproutIcon, ClassIcon, ShieldIcon, LogoutIcon } from '../components/Icons.jsx'
+import { KeyRound, Palette } from 'lucide-react'
+import {
+  HomeIcon,
+  ChatIcon,
+  UserIcon,
+  SproutIcon,
+  ClassIcon,
+  ShieldIcon,
+  LogoutIcon,
+  IconBadge,
+} from '../components/Icons.jsx'
 import { ROLE_LABELS, useAuthActions, useMe } from '../lib/auth.js'
 import { Avatar, Spinner } from '../components/ui.jsx'
 import AuthSplash from '../components/AuthSplash.jsx'
@@ -143,7 +153,7 @@ function Layout() {
       </nav>
 
       {canChat && <ChatDock />}
-      {farewell && <AuthSplash title={`Sampai jumpa, ${me.displayName} 👋`} subtitle="Semoga harimu menyenangkan" />}
+      {farewell && <AuthSplash title={`Sampai jumpa, ${me.displayName}`} subtitle="Semoga harimu menyenangkan" />}
     </div>
   )
 }
@@ -237,9 +247,15 @@ function AccountMenu({ me, onLogout }) {
           </Link>
           <div className="mt-2 space-y-0.5">
             <Link to="/ganti-password" onClick={() => setOpen(false)} className={item} role="menuitem">
-              <span className="flex size-9 items-center justify-center rounded-full bg-slate-100">🔑</span>
+              <IconBadge icon={KeyRound} />
               Ganti password
             </Link>
+            {me.role === 'admin' && (
+              <Link to="/admin#tema" onClick={() => setOpen(false)} className={item} role="menuitem">
+                <IconBadge icon={Palette} />
+                Tema warna
+              </Link>
+            )}
             <button
               onClick={() => {
                 setOpen(false)
@@ -248,9 +264,7 @@ function AccountMenu({ me, onLogout }) {
               className={item}
               role="menuitem"
             >
-              <span className="flex size-9 items-center justify-center rounded-full bg-slate-100">
-                <LogoutIcon className="size-5" />
-              </span>
+              <IconBadge icon={LogoutIcon} />
               Keluar
             </button>
           </div>

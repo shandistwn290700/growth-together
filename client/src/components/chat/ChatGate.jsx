@@ -3,7 +3,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../../lib/api.js'
 import { useMe } from '../../lib/auth.js'
 import { unlockChat } from '../../lib/chatSession.js'
+import { LockKeyhole } from 'lucide-react'
 import { Alert, Button, Card, Field, Input, Spinner } from '../ui.jsx'
+import { IconBadge } from '../Icons.jsx'
 import { LocalKeyContext, useChatKeyStatus } from './chatState.js'
 
 // Chat hanya bisa dibuka jika kunci privat di perangkat ini cocok dengan kunci aktif di server.
@@ -34,7 +36,7 @@ function UnlockForm({ hasServerKey }) {
 
   return (
     <Card className="mx-auto max-w-md space-y-4 text-center">
-      <div className="text-5xl">🔐</div>
+      <IconBadge icon={LockKeyhole} size="xl" tone="soft" className="mx-auto" />
       <div>
         <h1 className="text-xl font-bold">{hasServerKey ? 'Buka chat di perangkat ini' : 'Aktifkan chat terenkripsi'}</h1>
         <p className="mt-1 text-sm text-slate-600">

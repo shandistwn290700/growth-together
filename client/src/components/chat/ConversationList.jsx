@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Lock } from 'lucide-react'
 import api, { getErrorMessage } from '../../lib/api.js'
 import { useMe } from '../../lib/auth.js'
 import { Alert, Avatar, Spinner } from '../ui.jsx'
@@ -101,7 +102,14 @@ export default function ConversationList({ activeId, onSelect }) {
                         ) : (
                           <>
                             {last.senderId === me.id && 'Anda: '}
-                            {preview?.locked ? '🔒 Pesan terkunci' : (preview?.text ?? '…')}
+                            {preview?.locked ? (
+                              <>
+                                <Lock className="mr-1 inline size-3.5 align-[-2px]" aria-hidden />
+                                Pesan terkunci
+                              </>
+                            ) : (
+                              (preview?.text ?? '…')
+                            )}
                           </>
                         )}
                       </span>

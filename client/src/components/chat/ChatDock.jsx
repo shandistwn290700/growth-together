@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { Maximize2, Minus, X } from 'lucide-react'
 import { Avatar } from '../ui.jsx'
 import ChatThread from './ChatThread.jsx'
 import { LocalKeyContext, counterpartName, useChat, useConversations } from './chatState.js'
@@ -63,7 +64,7 @@ function HeaderButton({ label, onClick, children }) {
       onClick={onClick}
       title={label}
       aria-label={label}
-      className="flex size-8 items-center justify-center rounded-full text-lg leading-none text-brand-700 hover:bg-slate-100"
+      className="flex size-8 items-center justify-center rounded-full text-brand-600 hover:bg-brand-50"
     >
       {children}
     </button>
@@ -118,13 +119,13 @@ function ChatWindow({ item, conversation }) {
                   navigate(`/chat/${item.id}`)
                 }}
               >
-                ⤢
+                <Maximize2 className="size-4" strokeWidth={2.4} />
               </HeaderButton>
               <HeaderButton label="Kecilkan" onClick={minimize}>
-                –
+                <Minus className="size-5" strokeWidth={2.4} />
               </HeaderButton>
               <HeaderButton label="Tutup" onClick={() => leave(() => dock.close(item.id))}>
-                ×
+                <X className="size-5" strokeWidth={2.4} />
               </HeaderButton>
             </div>
           }
@@ -160,9 +161,9 @@ function Bubble({ item, conversation }) {
       <button
         onClick={() => leave(() => dock.close(item.id))}
         aria-label={`Tutup chat dengan ${name}`}
-        className="absolute -top-1 -right-1 hidden size-5 items-center justify-center rounded-full bg-white text-xs text-slate-600 shadow ring-1 ring-slate-200 group-hover:flex focus:flex"
+        className="absolute -top-1 -right-1 hidden size-5 items-center justify-center rounded-full bg-white text-slate-600 shadow ring-1 ring-slate-200 group-hover:flex focus:flex"
       >
-        ×
+        <X className="size-3.5" strokeWidth={2.6} />
       </button>
     </div>
   )

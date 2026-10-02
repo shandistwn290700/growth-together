@@ -14,6 +14,7 @@ const CommentController = require('../controllers/commentController');
 const ReactionController = require('../controllers/reactionController');
 const StudentController = require('../controllers/studentController');
 const ChatController = require('../controllers/chatController');
+const SettingsController = require('../controllers/settingsController');
 
 const router = express.Router();
 
@@ -50,6 +51,7 @@ const excelUpload = multer({
 
 // ---------- Publik ----------
 router.post('/auth/login', loginLimiter, AuthController.login);
+router.get('/settings/appearance', SettingsController.getAppearance); // tema juga dipakai di halaman login
 
 // ---------- Wajib login ----------
 router.use(authentication);
@@ -103,6 +105,7 @@ router.get('/conversations/:id/messages', ChatController.messages);
 router.post('/conversations/:id/messages', ChatController.send);
 router.post('/conversations/:id/read', ChatController.markRead);
 
+router.put('/admin/settings/appearance', authorize('admin'), SettingsController.updateAppearance);
 router.get('/admin/teachers', authorize('admin'), UserController.listTeachers);
 router.post('/admin/users/:id/reset-password', authorize('admin'), UserController.resetPassword);
 router.patch('/admin/users/:id/status', authorize('admin'), UserController.setActive);

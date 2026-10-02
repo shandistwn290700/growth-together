@@ -517,6 +517,20 @@ const cli = (...args) =>
     feed = await feedOf(ahmadOrtu.token);
     check('avatar guru tampil di postingan', !!feed.find((p) => p.author.id === hasan.user.id)?.author.avatarUrl);
 
+    // ================= TEMA WARNA =================
+    console.log('\n--- Tema ---');
+    r = await call('GET', '/settings/appearance');
+    check('tema bisa dibaca tanpa login (untuk halaman login), default toska', r.data.theme === 'toska', JSON.stringify(r.data));
+    r = await call('PUT', '/admin/settings/appearance', { token: siti.token, json: { theme: 'biru' } });
+    check('guru tidak bisa mengganti tema -> 403', r.status === 403);
+    r = await call('PUT', '/admin/settings/appearance', { token: admin, json: { theme: 'kuning-neon' } });
+    check('tema di luar daftar ditolak -> 400', r.status === 400);
+    r = await call('PUT', '/admin/settings/appearance', { token: admin, json: { theme: 'biru' } });
+    check('admin mengganti tema', r.status === 200 && r.data.theme === 'biru', JSON.stringify(r.data));
+    r = await call('PUT', '/admin/settings/appearance', { token: admin, json: { theme: 'ungu' } });
+    r = await call('GET', '/settings/appearance');
+    check('tema terbaru berlaku untuk semua (tersimpan di server)', r.data.theme === 'ungu', JSON.stringify(r.data));
+
     // ================= TAHAP 5: CHAT E2EE =================
     console.log('\n--- Tahap 5 ---');
     const c = await import(require('url').pathToFileURL(path.join(SERVER, '..', 'client', 'src', 'lib', 'crypto.js')).href);

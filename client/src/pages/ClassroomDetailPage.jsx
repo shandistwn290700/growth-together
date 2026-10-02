@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowLeft, KeyRound } from 'lucide-react'
 import api, { getErrorMessage } from '../lib/api.js'
 import { useMe } from '../lib/auth.js'
 import { ENROLLMENT_STATUS, classLabel, useAcademicYears, useClassrooms, useTeachers } from '../lib/queries.js'
@@ -25,8 +26,8 @@ export default function ClassroomDetailPage() {
 
   return (
     <div className="space-y-4">
-      <Link to="/kelas" className="text-sm font-semibold text-brand-700 hover:underline">
-        ← Kembali ke daftar kelas
+      <Link to="/kelas" className="inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline">
+        <ArrowLeft className="size-4" strokeWidth={2.4} /> Kembali ke daftar kelas
       </Link>
 
       <Card>
@@ -147,9 +148,9 @@ function StudentTable({ classroom, isAdmin }) {
                     onClick={() => confirmReset(s)}
                     disabled={reset.isPending}
                     aria-label={`Reset password orang tua ${s.fullName}`}
-                    className="shrink-0 rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600 active:bg-slate-200"
+                    className="flex shrink-0 items-center gap-1 rounded-lg bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 active:bg-brand-100"
                   >
-                    🔑 Reset
+                    <KeyRound className="size-3.5" strokeWidth={2.4} /> Reset
                   </button>
                 )}
               </li>

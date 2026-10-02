@@ -56,11 +56,12 @@ export function Alert({ variant = 'error', children }) {
   )
 }
 
+// green & blue mengikuti tema sekolah (muda & lebih tua); amber dan gray tetap sebagai warna status.
 const BADGE_VARIANTS = {
   green: 'bg-brand-50 text-brand-700',
+  blue: 'bg-brand-100 text-brand-800',
   gray: 'bg-slate-100 text-slate-600',
   amber: 'bg-amber-50 text-amber-800',
-  blue: 'bg-sky-50 text-sky-700',
 }
 
 export function Badge({ variant = 'gray', children }) {

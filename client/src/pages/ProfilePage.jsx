@@ -36,7 +36,7 @@ function StaffProfile({ me }) {
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <section className="overflow-hidden rounded-xl bg-white shadow-sm">
-        <div className="h-28 bg-gradient-to-r from-brand-700 via-brand-600 to-emerald-400 sm:h-36" />
+        <div className="h-28 bg-gradient-to-r from-brand-700 via-brand-600 to-brand-400 sm:h-36" />
         <div className="flex flex-col items-center gap-3 px-5 pb-5 sm:flex-row sm:items-end">
           <div className="-mt-16 sm:-mt-20">
             <PhotoUploader name={me.displayName} photoUrl={me.avatarUrl} canEdit save={saveAvatar} />

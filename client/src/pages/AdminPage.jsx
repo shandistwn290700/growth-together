@@ -1,17 +1,99 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Check, FileSpreadsheet, Palette, Sprout } from 'lucide-react'
 import api, { downloadBlob, getErrorMessage } from '../lib/api.js'
 import { useAcademicYears, useTeachers } from '../lib/queries.js'
+import { DEFAULT_THEME, THEMES, applyTheme } from '../lib/theme.js'
+import { APPEARANCE_KEY, useAppearance } from '../lib/useAppearance.js'
 import { Alert, Badge, Button, Card, Field, Input, Spinner } from '../components/ui.jsx'
+import { IconBadge } from '../components/Icons.jsx'
 
 export default function AdminPage() {
+  // Tautan "/admin#tema" (dari menu akun) langsung menggulir ke bagian tema warna.
+  const { hash } = useLocation()
+  useEffect(() => {
+    if (!hash) return
+    const frame = requestAnimationFrame(() => document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' }))
+    return () => cancelAnimationFrame(frame)
+  }, [hash])
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-extrabold">Admin</h1>
       <AcademicYearSection />
+      <ThemeSection />
       <ImportSection />
       <TeacherSection />
     </div>
+  )
+}
+
+// ---------- Tema warna ----------
+
+function ThemeSection() {
+  const queryClient = useQueryClient()
+  const { data } = useAppearance()
+  const current = data?.theme ?? DEFAULT_THEME
+
+  const save = useMutation({
+    mutationFn: (theme) => api.put('/admin/settings/appearance', { theme }).then((r) => r.data),
+    // Langsung terlihat saat diklik; dikembalikan jika gagal disimpan.
+    onMutate: (theme) => {
+      const previous = current
+      applyTheme(theme)
+      queryClient.setQueryData(APPEARANCE_KEY, { theme })
+      return { previous }
+    },
+    onError: (err, theme, context) => {
+      applyTheme(context.previous)
+      queryClient.setQueryData(APPEARANCE_KEY, { theme: context.previous })
+    },
+  })
+
+  return (
+    <Card className="scroll-mt-20 space-y-4" id="tema">
+      <div className="flex items-start gap-3">
+        <IconBadge icon={Palette} />
+        <div>
+          <h2 className="text-lg font-bold">Tema warna</h2>
+          <p className="text-sm text-slate-600">
+            Warna tombol, ikon, dan tautan untuk <b>semua pengguna</b>. Pengguna lain melihat tema baru saat membuka atau kembali ke
+            aplikasi.
+          </p>
+        </div>
+      </div>
+
+      {save.isError && <Alert>{getErrorMessage(save.error)}</Alert>}
+
+      <div role="radiogroup" aria-label="Pilihan tema warna" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {Object.entries(THEMES).map(([key, theme]) => {
+          const selected = key === current
+          return (
+            <button
+              key={key}
+              role="radio"
+              aria-checked={selected}
+              onClick={() => !selected && save.mutate(key)}
+              disabled={save.isPending}
+              className={`flex items-center gap-3 rounded-xl border-2 p-2.5 text-left transition-colors ${
+                selected ? 'border-brand-600 bg-brand-50' : 'border-slate-200 hover:border-slate-300'
+              }`}
+            >
+              {/* Pratinjau dua warna: warna tema + putih */}
+              <span
+                className="flex size-10 shrink-0 items-center justify-center rounded-full text-white shadow-sm"
+                style={{ background: `linear-gradient(135deg, ${theme.shades[700]}, ${theme.shades[500]})` }}
+              >
+                <Sprout className="size-5" strokeWidth={2.4} />
+              </span>
+              <span className="min-w-0 flex-1 text-sm font-semibold">{theme.label}</span>
+              {selected && <Check className="size-5 shrink-0 text-brand-600" strokeWidth={2.6} aria-hidden />}
+            </button>
+          )
+        })}
+      </div>
+    </Card>
   )
 }
 
@@ -195,7 +277,7 @@ function ImportSection() {
           onClick={() => fileInput.current.click()}
           className="flex min-w-0 flex-1 basis-56 items-center gap-2 rounded-lg bg-brand-50 px-3 py-2 text-left text-sm font-semibold text-brand-700 hover:bg-brand-100"
         >
-          <span aria-hidden>📄</span>
+          <FileSpreadsheet className="size-5 shrink-0" strokeWidth={2.2} aria-hidden />
           <span className="truncate">{file ? file.name : 'Pilih file Excel (.xlsx)'}</span>
         </button>
         <Button type="submit" disabled={!file || upload.isPending}>

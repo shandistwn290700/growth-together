@@ -3,7 +3,9 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../../lib/api.js'
 import { timelineKey } from '../../lib/feedCache.js'
 import { useInfiniteScroll } from '../../lib/useInfiniteScroll.js'
+import { BookOpen, Play, Sprout } from 'lucide-react'
 import { Alert, Card, Spinner } from '../ui.jsx'
+import { IconBadge } from '../Icons.jsx'
 import PostCard from '../feed/PostCard.jsx'
 import { Lightbox } from '../feed/MediaGrid.jsx'
 
@@ -21,9 +23,9 @@ function usePaged(queryKey, url, classroomId) {
 
 function EmptyState({ text }) {
   return (
-    <Card className="text-center">
-      <p className="text-4xl">🌱</p>
-      <p className="mt-2 text-sm text-slate-600">{text}</p>
+    <Card className="flex flex-col items-center text-center">
+      <IconBadge icon={Sprout} size="xl" tone="soft" />
+      <p className="mt-3 text-sm text-slate-600">{text}</p>
     </Card>
   )
 }
@@ -47,8 +49,8 @@ export function StudentTimeline({ studentId, classroomId, history }) {
             {showDivider && cls && (
               <div className="flex items-center gap-3 pt-2">
                 <span className="h-px flex-1 bg-slate-300" />
-                <span className="rounded-full bg-brand-50 px-3 py-1 text-sm font-bold text-brand-700">
-                  📚 {cls.label} · {cls.academicYear}
+                <span className="flex items-center gap-1.5 rounded-full bg-brand-600 px-3 py-1 text-sm font-bold text-white">
+                  <BookOpen className="size-4" strokeWidth={2.2} aria-hidden /> {cls.label} · {cls.academicYear}
                 </span>
                 <span className="h-px flex-1 bg-slate-300" />
               </div>
@@ -79,7 +81,9 @@ export function StudentGallery({ studentId, classroomId }) {
           <button key={m.id} onClick={() => setOpenIndex(i)} className="relative aspect-square bg-slate-200" aria-label="Lihat media">
             <img src={m.thumbUrl} alt="" loading="lazy" className="size-full object-cover" />
             {m.type === 'video' && (
-              <span className="absolute top-1.5 right-1.5 rounded bg-black/60 px-1.5 text-xs text-white">▶ Video</span>
+              <span className="absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-full bg-brand-600/90 text-white">
+                <Play className="ml-px size-3.5 fill-white" aria-label="Video" />
+              </span>
             )}
           </button>
         ))}

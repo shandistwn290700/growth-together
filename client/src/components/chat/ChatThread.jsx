@@ -5,6 +5,7 @@ import api, { getErrorMessage } from '../../lib/api.js'
 import { useMe } from '../../lib/auth.js'
 import { encryptFor } from '../../lib/chatSession.js'
 import { getSocket } from '../../lib/socket.js'
+import { ArrowLeft, Check, CheckCheck, Lock, SendHorizontal } from 'lucide-react'
 import { Alert, Spinner } from '../ui.jsx'
 import { addMessageToCache, counterpartName, messagesKey, useChat, useConversations, useLocalKey } from './chatState.js'
 import { OnlineAvatar } from './ConversationList.jsx'
@@ -74,8 +75,8 @@ export default function ChatThread({ conversationId, compact = false, autoFocus 
     <div className="flex min-h-0 w-full flex-col">
       <header className={`flex items-center gap-2 border-b border-slate-100 ${compact ? 'px-2 py-1.5 shadow-sm' : 'gap-3 px-3 py-2.5'}`}>
         {!compact && (
-          <Link to="/chat" className="rounded-full px-2 py-1 text-xl text-slate-500 hover:bg-slate-100 md:hidden" aria-label="Kembali">
-            ←
+          <Link to="/chat" className="flex size-9 items-center justify-center rounded-full text-brand-600 hover:bg-slate-100 md:hidden" aria-label="Kembali">
+            <ArrowLeft className="size-5" strokeWidth={2.4} />
           </Link>
         )}
         {onHeaderClick ? (
@@ -95,10 +96,13 @@ export default function ChatThread({ conversationId, compact = false, autoFocus 
       >
         {messages.isFetchingNextPage && <Spinner label="Memuat pesan lama…" />}
         {!messages.hasNextPage && (
-          <p className="mx-auto mb-4 max-w-sm rounded-lg bg-amber-50 px-3 py-2 text-center text-xs text-amber-900">
-            {compact
-              ? '🔒 Terenkripsi end-to-end. Sekolah pun tidak bisa membaca.'
-              : `🔒 Pesan di percakapan ini terenkripsi end-to-end. Hanya Anda dan ${counterpartName(person)} yang bisa membacanya, pihak sekolah pun tidak.`}
+          <p className="mx-auto mb-4 flex max-w-sm items-start gap-2 rounded-lg bg-brand-50 px-3 py-2 text-left text-xs text-brand-800">
+            <Lock className="mt-px size-3.5 shrink-0" strokeWidth={2.4} aria-hidden />
+            <span>
+              {compact
+                ? 'Terenkripsi end-to-end. Sekolah pun tidak bisa membaca.'
+                : `Pesan di percakapan ini terenkripsi end-to-end. Hanya Anda dan ${counterpartName(person)} yang bisa membacanya, pihak sekolah pun tidak.`}
+            </span>
           </p>
         )}
         {items.map((m, i) => {
@@ -120,18 +124,24 @@ export default function ChatThread({ conversationId, compact = false, autoFocus 
                 >
                   <p className="break-words whitespace-pre-wrap">
                     {result?.locked ? (
-                      <i className="opacity-80">🔒 Pesan ini tidak bisa dibuka (dikirim sebelum kunci chat diganti)</i>
+                      <i className="opacity-80">
+                        <Lock className="mr-1 inline size-3.5 align-[-2px]" aria-hidden />
+                        Pesan ini tidak bisa dibuka (dikirim sebelum kunci chat diganti)
+                      </i>
                     ) : (
                       (result?.text ?? '…')
                     )}
                   </p>
-                  <div className={`mt-0.5 text-right text-[11px] ${mine ? 'text-brand-100' : 'text-slate-400'}`}>
+                  <div
+                    className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${mine ? 'text-brand-100' : 'text-slate-400'}`}
+                  >
                     {clock(m.createdAt)}
-                    {mine && (
-                      <span className={`ml-1 ${m.readAt ? 'font-bold text-sky-200' : ''}`} title={m.readAt ? 'Sudah dibaca' : 'Terkirim'}>
-                        {m.readAt ? '✓✓' : '✓'}
-                      </span>
-                    )}
+                    {mine &&
+                      (m.readAt ? (
+                        <CheckCheck className="size-4 text-white" strokeWidth={2.6} aria-label="Sudah dibaca" />
+                      ) : (
+                        <Check className="size-3.5" strokeWidth={2.6} aria-label="Terkirim" />
+                      ))}
                   </div>
                 </div>
               </div>
@@ -305,7 +315,7 @@ function Composer({ conversation, onSent, autoFocus }) {
           className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 disabled:bg-slate-300"
           aria-label="Kirim"
         >
-          ➤
+          <SendHorizontal className="size-5" strokeWidth={2.2} />
         </button>
       </form>
     </div>

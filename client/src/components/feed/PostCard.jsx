@@ -5,6 +5,7 @@ import api, { getErrorMessage } from '../../lib/api.js'
 import { useMe } from '../../lib/auth.js'
 import { fullDate, timeAgo } from '../../lib/format.js'
 import { removePost, updatePost } from '../../lib/feedCache.js'
+import { Ellipsis, MessageCircle } from 'lucide-react'
 import { Alert, Avatar, Button } from '../ui.jsx'
 import MediaGrid from './MediaGrid.jsx'
 import CommentSection from './CommentSection.jsx'
@@ -94,7 +95,7 @@ export default function PostCard({ post }) {
           className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-bold text-slate-600 hover:bg-slate-100"
           aria-expanded={showComments}
         >
-          💬 Komentar
+          <MessageCircle className="size-5 text-brand-600" strokeWidth={2.2} /> Komentar
         </button>
       </div>
 
@@ -125,11 +126,11 @@ function PostMenu({ post, onEdit }) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="rounded-full px-2 py-1 text-xl leading-none text-slate-500 hover:bg-slate-100"
+        className="flex size-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
         aria-label="Menu postingan"
         aria-expanded={open}
       >
-        ⋯
+        <Ellipsis className="size-5" />
       </button>
       {open && (
         <div role="menu" className="absolute right-0 z-10 mt-1 w-44 overflow-hidden rounded-xl bg-white py-1 shadow-lg ring-1 ring-slate-200">

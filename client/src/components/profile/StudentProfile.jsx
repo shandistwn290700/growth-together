@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../../lib/api.js'
+import { BookOpen, Cake, CalendarDays, GraduationCap, IdCard, Play, Smile, Star } from 'lucide-react'
 import { Alert, Card, Spinner } from '../ui.jsx'
+import { IconBadge } from '../Icons.jsx'
 import PostComposer from '../feed/PostComposer.jsx'
 import { Lightbox } from '../feed/MediaGrid.jsx'
 import { showNickname } from '../../lib/format.js'
@@ -81,14 +83,14 @@ function AboutCard({ profile }) {
 
   const nickname = showNickname(student)
   const rows = [
-    nickname && ['😊', `Dipanggil ${nickname}`, 'Nama panggilan'],
+    nickname && [Smile, `Dipanggil ${nickname}`, 'Nama panggilan'],
     student.status === 'graduated'
-      ? ['🎓', 'Alumni', 'Sudah lulus']
-      : current && ['📚', current.label, `Tahun ajaran ${current.academicYear}`],
-    ['🗓️', `Masuk tahun ${student.entryYear}`, `${history.length} kelas dilalui`],
-    ['🌟', `${moments} momen tercatat`, 'Di semua kelas'],
-    birth && ['🎂', birth, 'Tanggal lahir'],
-    ['🆔', `NIS ${student.nis}`, null],
+      ? [GraduationCap, 'Alumni', 'Sudah lulus']
+      : current && [BookOpen, current.label, `Tahun ajaran ${current.academicYear}`],
+    [CalendarDays, `Masuk tahun ${student.entryYear}`, `${history.length} kelas dilalui`],
+    [Star, `${moments} momen tercatat`, 'Di semua kelas'],
+    birth && [Cake, birth, 'Tanggal lahir'],
+    [IdCard, `NIS ${student.nis}`, null],
   ].filter(Boolean)
 
   return (
@@ -97,9 +99,7 @@ function AboutCard({ profile }) {
       <ul className="space-y-3">
         {rows.map(([icon, title, hint]) => (
           <li key={title} className="flex items-center gap-3">
-            <span className="text-xl" aria-hidden>
-              {icon}
-            </span>
+            <IconBadge icon={icon} size="sm" />
             <span className="min-w-0">
               <span className="block truncate font-semibold">{title}</span>
               {hint && <span className="block text-xs text-slate-500">{hint}</span>}
@@ -139,7 +139,11 @@ function PhotosCard({ studentId, onSeeAll }) {
           {items.map((m, i) => (
             <button key={m.id} onClick={() => setOpenIndex(i)} className="relative aspect-square bg-slate-200" aria-label="Lihat media">
               <img src={m.thumbUrl} alt="" loading="lazy" className="size-full object-cover" />
-              {m.type === 'video' && <span className="absolute top-1 right-1 rounded bg-black/60 px-1 text-[10px] text-white">▶</span>}
+              {m.type === 'video' && (
+                <span className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-brand-600/90 text-white">
+                  <Play className="ml-px size-3 fill-white" />
+                </span>
+              )}
             </button>
           ))}
         </div>

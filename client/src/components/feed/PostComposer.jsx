@@ -5,6 +5,7 @@ import { useMe } from '../../lib/auth.js'
 import { classLabel, useClassrooms } from '../../lib/queries.js'
 import { MAX_FILES, mediaTypeOf, uploadToCloudinary, validateFile } from '../../lib/upload.js'
 import { addNewPost } from '../../lib/feedCache.js'
+import { Camera, Image, Star, Tag, X } from 'lucide-react'
 import { Alert, Avatar, Button, Card, Select } from '../ui.jsx'
 
 let nextFileId = 1
@@ -65,10 +66,14 @@ export default function PostComposer() {
             onChange={(e) => e.target.files.length && setOpen({ files: [...e.target.files] })}
           />
           <button onClick={() => quickPicker.current.click()} className={action}>
-            <span className="text-xl">🖼️</span> Foto/Video
+            <Image className="size-5 text-brand-600" strokeWidth={2.2} /> Foto/Video
           </button>
           <button onClick={() => setOpen({ files: [] })} className={action}>
-            <span className="text-xl">{me.role === 'parent' ? '🌟' : '🏷️'}</span>
+            {me.role === 'parent' ? (
+              <Star className="size-5 text-brand-600" strokeWidth={2.2} />
+            ) : (
+              <Tag className="size-5 text-brand-600" strokeWidth={2.2} />
+            )}
             {me.role === 'parent' ? 'Pencapaian' : 'Tandai siswa'}
           </button>
         </div>
@@ -169,7 +174,7 @@ function ComposerForm({ me, initialFiles, onClose }) {
                   className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
                   aria-label="Hapus file"
                 >
-                  ×
+                  <X className="size-4" />
                 </button>
               )}
             </div>
@@ -201,7 +206,7 @@ function ComposerForm({ me, initialFiles, onClose }) {
           aria-label="Tambah foto atau video"
           className="px-3"
         >
-          📷 <span className="hidden sm:inline">Foto/Video</span>
+          <Camera className="size-[18px] text-brand-600" strokeWidth={2.2} /> <span className="hidden sm:inline">Foto/Video</span>
           <span className="text-slate-500">
             {files.length}/{MAX_FILES}
           </span>

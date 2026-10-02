@@ -1,5 +1,18 @@
 import { Link } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
+import {
+  BookOpen,
+  FileSpreadsheet,
+  GraduationCap,
+  House,
+  MessageCircle,
+  Palette,
+  Shield,
+  Sprout,
+  TrendingUp,
+  User,
+} from 'lucide-react'
+import { IconBadge } from '../Icons.jsx'
 import api from '../../lib/api.js'
 import { useMe } from '../../lib/auth.js'
 import { classLabel, useAcademicYears, useClassrooms, useTeachers } from '../../lib/queries.js'
@@ -13,7 +26,7 @@ const STICKY = 'sticky top-[4.5rem] max-h-[calc(100dvh-5.5rem)] overflow-y-auto 
 function SidebarLink({ to, icon, label, hint, badge }) {
   return (
     <Link to={to} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-slate-200/70">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white text-lg shadow-sm">{icon}</span>
+      <IconBadge icon={icon} />
       <span className="min-w-0 flex-1">
         <span className="block truncate font-semibold">{label}</span>
         {hint && <span className="block truncate text-xs text-slate-500">{hint}</span>}
@@ -40,11 +53,16 @@ export function LeftSidebar() {
         <Avatar name={me.displayName} src={me.avatarUrl} size="sm" />
         <span className="truncate font-bold">{me.displayName}</span>
       </Link>
-      <SidebarLink to="/" icon="🏠" label="Beranda" />
-      <SidebarLink to="/profil" icon={isParent ? '🌱' : '👤'} label={isParent ? 'Timeline ananda' : 'Profil saya'} hint={isParent ? 'Perjalanan kelas & galeri' : undefined} />
-      {me.role !== 'admin' && <SidebarLink to="/chat" icon="💬" label="Chat" hint="Terenkripsi end-to-end" badge={unread} />}
-      {me.role !== 'parent' && <SidebarLink to="/kelas" icon="🎓" label={me.role === 'admin' ? 'Semua kelas' : 'Kelas'} />}
-      {me.role === 'admin' && <SidebarLink to="/admin" icon="🛡️" label="Admin" hint="Tahun ajaran, import akun, guru" />}
+      <SidebarLink to="/" icon={House} label="Beranda" />
+      <SidebarLink
+        to="/profil"
+        icon={isParent ? Sprout : User}
+        label={isParent ? 'Timeline ananda' : 'Profil saya'}
+        hint={isParent ? 'Perjalanan kelas & galeri' : undefined}
+      />
+      {me.role !== 'admin' && <SidebarLink to="/chat" icon={MessageCircle} label="Chat" hint="Terenkripsi end-to-end" badge={unread} />}
+      {me.role !== 'parent' && <SidebarLink to="/kelas" icon={GraduationCap} label={me.role === 'admin' ? 'Semua kelas' : 'Kelas'} />}
+      {me.role === 'admin' && <SidebarLink to="/admin" icon={Shield} label="Admin" hint="Tahun ajaran, import akun, tema" />}
 
       {me.role === 'teacher' && <TeacherClasses me={me} />}
       {isParent && <ChildClass me={me} />}
@@ -62,7 +80,7 @@ function TeacherClasses({ me }) {
     <>
       <SectionTitle>Kelas saya</SectionTitle>
       {mine.map((c) => (
-        <SidebarLink key={c.id} to={`/kelas/${c.id}`} icon="📚" label={classLabel(c)} hint={`${c.studentCount} siswa`} />
+        <SidebarLink key={c.id} to={`/kelas/${c.id}`} icon={BookOpen} label={classLabel(c)} hint={`${c.studentCount} siswa`} />
       ))}
     </>
   )
@@ -79,7 +97,7 @@ function ChildClass({ me }) {
   return (
     <>
       <SectionTitle>Kelas ananda</SectionTitle>
-      <SidebarLink to="/profil" icon="📚" label={current.label} hint={`Tahun ajaran ${current.academicYear}`} />
+      <SidebarLink to="/profil" icon={BookOpen} label={current.label} hint={`Tahun ajaran ${current.academicYear}`} />
     </>
   )
 }
@@ -168,8 +186,9 @@ function AdminSummary() {
         ))}
       </div>
       <div className="mt-2">
-        <SidebarLink to="/admin" icon="📥" label="Import akun dari Excel" />
-        <SidebarLink to="/kelas" icon="⬆️" label="Proses kenaikan kelas" />
+        <SidebarLink to="/admin" icon={FileSpreadsheet} label="Import akun dari Excel" />
+        <SidebarLink to="/kelas" icon={TrendingUp} label="Proses kenaikan kelas" />
+        <SidebarLink to="/admin#tema" icon={Palette} label="Ganti tema warna" />
       </div>
     </section>
   )

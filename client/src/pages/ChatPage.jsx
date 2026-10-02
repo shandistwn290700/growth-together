@@ -2,6 +2,7 @@ import { useParams } from 'react-router'
 import ChatGate from '../components/chat/ChatGate.jsx'
 import ConversationList from '../components/chat/ConversationList.jsx'
 import ChatThread from '../components/chat/ChatThread.jsx'
+import { ChatIcon, IconBadge } from '../components/Icons.jsx'
 
 // Laptop: daftar percakapan di kiri, isi chat di kanan. HP: bergantian (seperti Messenger).
 export default function ChatPage() {
@@ -24,8 +25,8 @@ export default function ChatPage() {
             <ChatThread key={conversationId} conversationId={conversationId} />
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-slate-500">
-              <span className="text-5xl">💬</span>
-              <p className="font-semibold">Pilih percakapan</p>
+              <IconBadge icon={ChatIcon} size="xl" tone="soft" />
+              <p className="mt-1 font-semibold">Pilih percakapan</p>
               <p className="max-w-xs text-sm">Semua pesan terenkripsi end-to-end antara guru dan orang tua.</p>
             </div>
           )}
