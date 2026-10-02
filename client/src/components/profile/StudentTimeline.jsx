@@ -7,7 +7,7 @@ import { BookOpen, Play, Sprout } from 'lucide-react'
 import { Alert, Card, Spinner } from '../ui.jsx'
 import { IconBadge } from '../Icons.jsx'
 import PostCard from '../feed/PostCard.jsx'
-import { Lightbox } from '../feed/MediaGrid.jsx'
+import MediaViewer from '../feed/MediaViewer.jsx'
 
 function usePaged(queryKey, url, classroomId) {
   const query = useInfiniteQuery({
@@ -90,7 +90,9 @@ export function StudentGallery({ studentId, classroomId }) {
       </div>
       <div ref={sentinel} />
       {query.isFetchingNextPage && <Spinner />}
-      {openIndex !== null && <Lightbox media={items} index={openIndex} onChange={setOpenIndex} />}
+      {openIndex !== null && (
+        <MediaViewer media={items} index={openIndex} onIndexChange={setOpenIndex} onClose={() => setOpenIndex(null)} />
+      )}
     </>
   )
 }

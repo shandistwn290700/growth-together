@@ -34,3 +34,8 @@ export const ENROLLMENT_STATUS = {
   graduated: { label: 'Lulus', variant: 'blue' },
   moved: { label: 'Pindah sekolah', variant: 'gray' },
 }
+
+// Komentar satu postingan (jendela komentar dan penampil foto/video memakai data yang sama).
+export function useComments(postId) {
+  return useQuery({ queryKey: ['comments', postId], queryFn: () => get(`/posts/${postId}/comments`), enabled: Boolean(postId) })
+}

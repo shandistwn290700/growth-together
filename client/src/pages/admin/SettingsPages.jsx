@@ -5,6 +5,7 @@ import api, { downloadBlob, getErrorMessage } from '../../lib/api.js'
 import { useAcademicYears } from '../../lib/queries.js'
 import { DEFAULT_THEME, THEMES, applyTheme } from '../../lib/theme.js'
 import { APPEARANCE_KEY, useAppearance } from '../../lib/useAppearance.js'
+import { confirmAction, notify } from '../../lib/alert.js'
 import { Alert, Badge, Button, Card, Field, Input, Spinner } from '../../components/ui.jsx'
 import { IconBadge } from '../../components/Icons.jsx'
 import { PageHeader } from '../../components/admin/AdminUI.jsx'
@@ -123,18 +124,25 @@ function AcademicYearSection() {
     onSuccess: () => {
       refresh()
       setForm(null)
+      notify('Tahun ajaran ditambahkan')
     },
   })
   const activate = useMutation({
-    mutationFn: (id) => api.patch(`/academic-years/${id}/activate`),
-    onSuccess: refresh,
+    mutationFn: (year) => api.patch(`/academic-years/${year.id}/activate`),
+    onSuccess: (_, year) => {
+      refresh()
+      notify(`Tahun ajaran ${year.name} aktif`)
+    },
   })
 
-  const confirmActivate = (year) => {
-    const ok = window.confirm(
-      `Aktifkan tahun ajaran ${year.name}?\n\nPostingan baru akan masuk ke kelas di tahun ajaran ini. Pastikan kenaikan kelas sudah diproses.`,
-    )
-    if (ok) activate.mutate(year.id)
+  const confirmActivate = async (year) => {
+    const ok = await confirmAction({
+      title: `Aktifkan tahun ajaran ${year.name}?`,
+      text: 'Postingan baru akan masuk ke kelas di tahun ajaran ini. Pastikan kenaikan kelas sudah diproses.',
+      confirmText: 'Aktifkan',
+      tone: 'warning',
+    })
+    if (ok) activate.mutate(year)
   }
 
   return (

@@ -4,6 +4,7 @@ import { Eye, Heart, Image as ImageIcon, MessageCircle, Play, Search, Trash2 } f
 import api, { getErrorMessage } from '../../lib/api.js'
 import { classLabel, useClassrooms } from '../../lib/queries.js'
 import { removePost } from '../../lib/feedCache.js'
+import { confirmDeletePost, notify } from '../../lib/alert.js'
 import { formatNumber, audienceLabel } from '../../lib/format.js'
 import { Alert, Button, Select, Spinner } from '../../components/ui.jsx'
 import { Modal, PageHeader, Panel } from '../../components/admin/AdminUI.jsx'
@@ -64,10 +65,12 @@ export default function ModerationPage() {
 
   const remove = useMutation({
     mutationFn: (id) => api.delete(`/posts/${id}`),
-    onSuccess: (_, id) => removePost(queryClient, id),
+    onSuccess: (_, id) => {
+      removePost(queryClient, id)
+      notify('Postingan dihapus')
+    },
   })
-  const confirmRemove = (post) =>
-    window.confirm('Hapus postingan ini beserta foto/videonya? Tindakan ini tidak bisa dibatalkan.') && remove.mutate(post.id)
+  const confirmRemove = async (post) => (await confirmDeletePost()) && remove.mutate(post.id)
 
   return (
     <>

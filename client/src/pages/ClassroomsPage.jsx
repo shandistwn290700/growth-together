@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../lib/api.js'
 import { useMe } from '../lib/auth.js'
+import { notify } from '../lib/alert.js'
 import { classLabel, useAcademicYears, useClassroomBase, useClassrooms, useTeachers } from '../lib/queries.js'
 import { Alert, Button, Card, Field, Input, Select, Spinner } from '../components/ui.jsx'
 
@@ -109,6 +110,7 @@ function CreateClassroomForm({ academicYearId }) {
       queryClient.invalidateQueries({ queryKey: ['classrooms'] })
       setForm({ grade: form.grade, name: '', teacherIds: [] })
       setOpen(false)
+      notify('Kelas ditambahkan')
     },
   })
 

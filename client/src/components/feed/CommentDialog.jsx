@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../../lib/api.js'
 import { useMe } from '../../lib/auth.js'
 import { authorName, timeAgo, fullDate } from '../../lib/format.js'
 import { updatePost } from '../../lib/feedCache.js'
+import { useComments } from '../../lib/queries.js'
+import { confirmAction, notify, showError } from '../../lib/alert.js'
 import { Lock, SendHorizontal } from 'lucide-react'
 import { Alert, Avatar, Select, Spinner } from '../ui.jsx'
 import GlassDialog from '../GlassDialog.jsx'
@@ -15,65 +17,69 @@ const isWideScreen = () => window.matchMedia('(min-width: 640px)').matches
 // Jendela kaca berisi postingan & komentarnya, kolom komentar menempel di bawah (seperti Facebook).
 // Komentar dikelompokkan per siswa. Orang tua hanya melihat utas anaknya; guru/admin melihat semua utas.
 export default function CommentDialog({ post, onClose }) {
-  const { data: me } = useMe()
-  const comments = useQuery({
-    queryKey: ['comments', post.id],
-    queryFn: () => api.get(`/posts/${post.id}/comments`).then((r) => r.data),
-  })
+  const comments = useComments(post.id)
   const inputId = `komentar-${post.id}`
   const [autoFocus] = useState(isWideScreen)
-
-  const threads = comments.data?.threads ?? []
-  const multiThread = comments.data?.students.length > 1
-  const isStaff = me.role !== 'parent'
-
-  // Pengumuman menandai banyak siswa sekaligus dan komentar orang tua bersifat pribadi per anak,
-  // jadi guru/admin cukup membalas di bawah komentar masing-masing.
-  let footer = null
-  if (comments.isSuccess && post.audience && isStaff) {
-    footer = <p className="text-center text-sm text-slate-600">Komentar orang tua bersifat pribadi. Balas di bawah komentar masing-masing.</p>
-  } else if (comments.isSuccess) {
-    footer = (
-      <>
-        {post.audience && (
-          <p className="mb-2 flex items-center justify-center gap-1.5 text-xs text-slate-600">
-            <Lock className="size-3.5" /> Komentar Anda hanya terlihat oleh guru & admin
-          </p>
-        )}
-        <CommentForm post={post} students={comments.data.students} inputId={inputId} autoFocus={autoFocus} />
-      </>
-    )
-  }
 
   return (
     <GlassDialog
       title={`Postingan ${authorName(post.author)}`}
       size="lg"
       onClose={onClose}
-      footer={footer}
+      footer={comments.isSuccess ? <CommentFooter post={post} data={comments.data} inputId={inputId} autoFocus={autoFocus} /> : null}
     >
       <PostContent post={post} onComments={() => document.getElementById(inputId)?.focus()} />
-
-      <div className="space-y-4 border-t border-slate-900/[0.07] px-4 py-3">
-        {comments.isPending && <Spinner />}
-        {comments.isError && <Alert>{getErrorMessage(comments.error)}</Alert>}
-        {comments.isSuccess && threads.length === 0 && (
-          <p className="py-4 text-center text-sm text-slate-600">
-            {post.audience ? 'Belum ada komentar.' : 'Belum ada komentar. Jadilah yang pertama memberi semangat!'}
-          </p>
-        )}
-        {threads.map((thread) => (
-          <section key={thread.student.id} className="space-y-2">
-            {multiThread && (
-              <h4 className="text-xs font-bold tracking-wide text-brand-700 uppercase">Tentang {thread.student.fullName}</h4>
-            )}
-            {thread.comments.map((c) => (
-              <CommentItem key={c.id} comment={c} post={post} me={me} studentId={thread.student.id} />
-            ))}
-          </section>
-        ))}
-      </div>
+      <CommentList post={post} comments={comments} />
     </GlassDialog>
+  )
+}
+
+// Bagian-bagian di bawah juga dipakai penampil foto/video (MediaViewer).
+
+// Kolom komentar yang menempel di bawah. Pengumuman menandai banyak siswa sekaligus dan komentar
+// orang tua bersifat pribadi per anak, jadi guru/admin cukup membalas di bawah komentar masing-masing.
+export function CommentFooter({ post, data, inputId, autoFocus = false }) {
+  const { data: me } = useMe()
+  if (post.audience && me.role !== 'parent') {
+    return <p className="text-center text-sm text-slate-600">Komentar orang tua bersifat pribadi. Balas di bawah komentar masing-masing.</p>
+  }
+  return (
+    <>
+      {post.audience && (
+        <p className="mb-2 flex items-center justify-center gap-1.5 text-xs text-slate-600">
+          <Lock className="size-3.5" /> Komentar Anda hanya terlihat oleh guru & admin
+        </p>
+      )}
+      <CommentForm post={post} students={data.students} inputId={inputId} autoFocus={autoFocus} />
+    </>
+  )
+}
+
+export function CommentList({ post, comments }) {
+  const { data: me } = useMe()
+  const threads = comments.data?.threads ?? []
+  const multiThread = comments.data?.students.length > 1
+
+  return (
+    <div className="space-y-4 border-t border-slate-900/[0.07] px-4 py-3">
+      {comments.isPending && <Spinner />}
+      {comments.isError && <Alert>{getErrorMessage(comments.error)}</Alert>}
+      {comments.isSuccess && threads.length === 0 && (
+        <p className="py-4 text-center text-sm text-slate-600">
+          {post.audience ? 'Belum ada komentar.' : 'Belum ada komentar. Jadilah yang pertama memberi semangat!'}
+        </p>
+      )}
+      {threads.map((thread) => (
+        <section key={thread.student.id} className="space-y-2">
+          {multiThread && (
+            <h4 className="text-xs font-bold tracking-wide text-brand-700 uppercase">Tentang {thread.student.fullName}</h4>
+          )}
+          {thread.comments.map((c) => (
+            <CommentItem key={c.id} comment={c} post={post} me={me} studentId={thread.student.id} />
+          ))}
+        </section>
+      ))}
+    </div>
   )
 }
 
@@ -113,8 +119,20 @@ function CommentBubble({ comment, post, me, onReply }) {
       queryClient.invalidateQueries({ queryKey: ['comments', post.id] })
       const removed = 1 + (comment.replies?.length ?? 0)
       updatePost(queryClient, post.id, (p) => ({ commentCount: Math.max(0, p.commentCount - removed) }))
+      notify('Komentar dihapus')
     },
+    onError: (err) => showError(getErrorMessage(err), 'Komentar gagal dihapus'),
   })
+  const confirmRemove = async () => {
+    const replies = comment.replies?.length ?? 0
+    const ok = await confirmAction({
+      title: 'Hapus komentar ini?',
+      text: replies ? `${replies} balasan di bawahnya juga akan terhapus.` : 'Komentar yang dihapus tidak bisa dikembalikan.',
+      confirmText: 'Hapus',
+      tone: 'danger',
+    })
+    if (ok) remove.mutate()
+  }
   const canDelete = comment.author.id === me.id || me.role === 'admin'
 
   return (
@@ -139,7 +157,7 @@ function CommentBubble({ comment, post, me, onReply }) {
           </button>
           {canDelete && (
             <button
-              onClick={() => window.confirm('Hapus komentar ini?') && remove.mutate()}
+              onClick={confirmRemove}
               disabled={remove.isPending}
               className="font-bold hover:text-red-600 hover:underline"
             >

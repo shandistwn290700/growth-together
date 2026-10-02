@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../../lib/api.js'
 import { updatePost } from '../../lib/feedCache.js'
+import { notify } from '../../lib/alert.js'
 import { authorName } from '../../lib/format.js'
 import { Alert, Avatar, Button } from '../ui.jsx'
 import GlassDialog from '../GlassDialog.jsx'
@@ -31,6 +32,7 @@ function EditDialog({ post, onClose }) {
     onSuccess: (updated) => {
       updatePost(queryClient, post.id, () => ({ caption: updated.caption, updatedAt: updated.updatedAt }))
       dialog.current.close()
+      notify('Caption diperbarui')
     },
   })
   const changed = caption !== original
@@ -41,7 +43,11 @@ function EditDialog({ post, onClose }) {
       title="Edit postingan"
       onClose={onClose}
       locked={save.isPending}
-      confirmClose={changed ? 'Batalkan perubahan caption?' : null}
+      confirmClose={
+        changed
+          ? { title: 'Batalkan perubahan caption?', text: 'Perubahan yang belum disimpan akan hilang.', confirmText: 'Ya, batalkan', cancelText: 'Lanjut edit' }
+          : null
+      }
       footer={
         <Button onClick={() => save.mutate()} disabled={!changed || save.isPending} className="w-full py-2.5 text-base">
           {save.isPending ? 'Menyimpan…' : 'Simpan'}

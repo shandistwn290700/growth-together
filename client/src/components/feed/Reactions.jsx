@@ -7,7 +7,9 @@ import { ThumbsUp, X } from 'lucide-react'
 import { Avatar, Spinner } from '../ui.jsx'
 
 // Tombol reaksi ala Facebook: klik = Suka/batal, tahan (HP) atau arahkan kursor (laptop) = pilih reaksi lain.
-export function ReactionButton({ post }) {
+// variant 'overlay': tulisan putih di atas foto gelap (penampil foto/video di HP).
+export function ReactionButton({ post, variant = 'default' }) {
+  const overlay = variant === 'overlay'
   const queryClient = useQueryClient()
   const [pickerOpen, setPickerOpen] = useState(false)
   const timer = useRef(null)
@@ -74,14 +76,16 @@ export function ReactionButton({ post }) {
         onKeyDown={(e) => e.key === 'ArrowUp' && setPickerOpen(true)}
         disabled={react.isPending}
         aria-haspopup="menu"
-        className={`flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-bold select-none hover:bg-slate-100 ${
-          mine ? mine.color : 'text-slate-600'
+        className={`flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-bold select-none ${
+          overlay ? 'text-white hover:bg-white/10' : `hover:bg-slate-100 ${mine ? mine.color : 'text-slate-600'}`
         }`}
       >
         {/* "Suka" memakai ikon jempol bertema (terisi saat dipilih); reaksi lain memakai emoji */}
         {!mine || mine.type === 'like' ? (
           <ThumbsUp
-            className={`size-5 ${mine ? 'fill-brand-600 text-brand-600' : 'text-brand-600'}`}
+            className={`size-5 ${
+              overlay ? (mine ? 'fill-brand-300 text-brand-300' : 'text-white') : mine ? 'fill-brand-600 text-brand-600' : 'text-brand-600'
+            }`}
             strokeWidth={2.2}
           />
         ) : (
@@ -94,7 +98,8 @@ export function ReactionButton({ post }) {
 }
 
 // Ringkasan reaksi: emoji terbanyak + jumlah. Guru/admin bisa melihat siapa saja yang bereaksi.
-export function ReactionSummary({ post, canSeeNames }) {
+export function ReactionSummary({ post, canSeeNames, variant = 'default' }) {
+  const overlay = variant === 'overlay'
   const [open, setOpen] = useState(false)
   const { total, counts } = post.reactions
   if (!total) return <span />
@@ -111,25 +116,31 @@ export function ReactionSummary({ post, canSeeNames }) {
     </>
   )
 
-  if (!canSeeNames) return <span className="flex items-center gap-1 text-sm text-slate-500">{content}</span>
+  const tone = overlay ? 'text-white/85' : 'text-slate-500'
+  if (!canSeeNames) return <span className={`flex items-center gap-1 text-sm ${tone}`}>{content}</span>
 
   return (
     <div className="relative">
-      <button onClick={() => setOpen(!open)} className="flex items-center gap-1 text-sm text-slate-500 hover:underline">
+      <button onClick={() => setOpen(!open)} className={`flex items-center gap-1 text-sm hover:underline ${tone}`}>
         {content}
       </button>
-      {open && <ReactorList postId={post.id} onClose={() => setOpen(false)} />}
+      {/* Di penampil foto, ringkasan ada di bawah layar, jadi daftarnya dibuka ke atas */}
+      {open && <ReactorList postId={post.id} onClose={() => setOpen(false)} above={overlay} />}
     </div>
   )
 }
 
-function ReactorList({ postId, onClose }) {
+function ReactorList({ postId, onClose, above = false }) {
   const list = useQuery({
     queryKey: ['reactions', postId],
     queryFn: () => api.get(`/posts/${postId}/reactions`).then((r) => r.data),
   })
   return (
-    <div className="absolute top-full left-0 z-10 mt-1 w-64 rounded-xl bg-white p-2 shadow-lg ring-1 ring-slate-200">
+    <div
+      className={`absolute left-0 z-10 w-64 rounded-xl bg-white p-2 text-slate-800 shadow-lg ring-1 ring-slate-200 ${
+        above ? 'bottom-full mb-1' : 'top-full mt-1'
+      }`}
+    >
       <div className="flex items-center justify-between px-1 pb-1">
         <span className="text-sm font-bold">Sudah merespons</span>
         <button onClick={onClose} className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Tutup">

@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { Camera } from 'lucide-react'
 import { getErrorMessage } from '../../lib/api.js'
 import { uploadToCloudinary, validateFile } from '../../lib/upload.js'
+import { notify, showError } from '../../lib/alert.js'
 
 // Foto profil besar dengan tombol kamera untuk menggantinya.
 // `save(uploaded)` dipanggil setelah file berhasil diunggah ke Cloudinary.
@@ -14,7 +15,8 @@ export default function PhotoUploader({ name, photoUrl, canEdit, save }) {
       if (error) throw new Error(error)
       return save(await uploadToCloudinary(file, null, 'avatar'))
     },
-    onError: (err) => window.alert(err.message && !err.response ? err.message : getErrorMessage(err)),
+    onSuccess: () => notify('Foto profil diperbarui'),
+    onError: (err) => showError(err.message && !err.response ? err.message : getErrorMessage(err), 'Foto gagal diunggah'),
   })
 
   return (

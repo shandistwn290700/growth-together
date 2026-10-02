@@ -5,6 +5,7 @@ import api, { downloadBlob, getErrorMessage } from '../../lib/api.js'
 import { useAcademicYears } from '../../lib/queries.js'
 import { formatNumber } from '../../lib/format.js'
 import { APPEARANCE_KEY, useAppearance } from '../../lib/useAppearance.js'
+import { notify } from '../../lib/alert.js'
 import { Alert, Button, Field, Input, Select, Spinner } from '../../components/ui.jsx'
 import { IconBadge } from '../../components/Icons.jsx'
 import { PageHeader, Panel } from '../../components/admin/AdminUI.jsx'
@@ -33,6 +34,7 @@ function SchoolNameForm({ className }) {
     onSuccess: (saved) => {
       queryClient.setQueryData(APPEARANCE_KEY, saved)
       setName(null)
+      notify('Nama sekolah disimpan')
     },
   })
 

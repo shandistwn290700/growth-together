@@ -5,7 +5,7 @@ import { BookOpen, Cake, CalendarDays, GraduationCap, IdCard, Play, Smile, Star 
 import { Alert, Card, Spinner } from '../ui.jsx'
 import { IconBadge } from '../Icons.jsx'
 import PostComposer from '../feed/PostComposer.jsx'
-import { Lightbox } from '../feed/MediaGrid.jsx'
+import MediaViewer from '../feed/MediaViewer.jsx'
 import { showNickname } from '../../lib/format.js'
 import StudentHeader, { ClassJourney } from './StudentHeader.jsx'
 import { StudentGallery, StudentTimeline } from './StudentTimeline.jsx'
@@ -148,7 +148,9 @@ function PhotosCard({ studentId, onSeeAll }) {
           ))}
         </div>
       )}
-      {openIndex !== null && <Lightbox media={items} index={openIndex} onChange={setOpenIndex} />}
+      {openIndex !== null && (
+        <MediaViewer media={items} index={openIndex} onIndexChange={setOpenIndex} onClose={() => setOpenIndex(null)} />
+      )}
     </Card>
   )
 }

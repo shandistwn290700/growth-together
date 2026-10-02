@@ -208,10 +208,19 @@ body {
     0 2px 8px rgb(15 23 42 / 0.06),
     inset 0 1px 0 rgb(255 255 255 / 0.9);
 }
+/* Panel postingan & lembar komentar di penampil foto/video: warnanya senada dengan jendela kaca,
+   tapi padat karena di belakangnya layar hitam. */
+.viewer-panel {
+  background: linear-gradient(165deg, #fff, color-mix(in oklab, var(--color-brand-50) 75%, white));
+}
 /* Kolom isian & kotak di dalam jendela kaca ikut sedikit tembus pandang */
 .glass-field {
   background: rgb(255 255 255 / 0.6);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.85);
+}
+.viewer-panel .glass-field {
+  background: rgb(15 23 42 / 0.05);
+  box-shadow: none;
 }
 /* Browser lama, atau pengguna yang memilih "kurangi transparansi": jendela biasa yang padat */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -238,6 +247,220 @@ body {
 /* Jarak aman di bawah kotak tulis pesan (garis "home" iPhone) */
 .safe-bottom {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* ---------- Jendela konfirmasi & notifikasi (SweetAlert2, lihat lib/alert.js) ----------
+   Gaya bawaan SweetAlert2 diganti lewat variabel --swal2-* miliknya, ditambah aturan di bawah.
+   Semua warna memakai warna tema sekolah, jadi ikut berganti saat admin mengganti tema. */
+.gt-swal-container {
+  --swal2-backdrop: color-mix(in oklab, var(--color-slate-900) 28%, transparent);
+  --swal2-backdrop-transition: background-color 0.2s, backdrop-filter 0.2s;
+  --swal2-width: 25rem;
+  --swal2-padding: 1.75rem 1.5rem 1.5rem;
+  --swal2-border-radius: 1.5rem;
+  --swal2-background: linear-gradient(165deg, rgb(255 255 255 / 0.92), color-mix(in oklab, var(--color-brand-50) 80%, transparent));
+  --swal2-color: var(--color-slate-600);
+  --swal2-title-padding: 0;
+  --swal2-html-container-padding: 0.5rem 0 0;
+  --swal2-actions-width: 100%;
+  --swal2-actions-margin: 1.5rem 0 0;
+}
+.gt-swal-container.swal2-backdrop-show {
+  -webkit-backdrop-filter: blur(6px) saturate(130%);
+  backdrop-filter: blur(6px) saturate(130%);
+}
+.swal2-popup.gt-swal {
+  max-width: calc(100vw - 2rem);
+  border: 1px solid rgb(255 255 255 / 0.8);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(180%);
+  box-shadow:
+    0 28px 70px -16px rgb(15 23 42 / 0.4),
+    inset 0 1px 0 rgb(255 255 255 / 0.9);
+}
+.gt-swal .gt-swal-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--color-slate-800);
+}
+.gt-swal .gt-swal-text {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  white-space: pre-line; /* baris baru di teks konfirmasi tetap tampil */
+}
+.gt-swal .gt-swal-actions {
+  flex-wrap: nowrap;
+  gap: 0.625rem;
+}
+.gt-swal-btn {
+  flex: 1;
+  min-height: 2.75rem;
+  padding: 0.625rem 1rem;
+  border-radius: 0.875rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  transition:
+    background-color 0.15s,
+    transform 0.1s;
+}
+.gt-swal-btn:active {
+  transform: scale(0.97);
+}
+.gt-swal-btn:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
+.gt-swal-confirm {
+  background: var(--color-brand-700);
+  color: #fff;
+  box-shadow: 0 6px 16px -6px color-mix(in oklab, var(--color-brand-700) 70%, transparent);
+}
+.gt-swal-confirm:hover {
+  background: var(--color-brand-800);
+}
+.gt-swal-danger {
+  background: var(--color-red-600);
+  color: #fff;
+  box-shadow: 0 6px 16px -6px color-mix(in oklab, var(--color-red-600) 70%, transparent);
+}
+.gt-swal-danger:hover {
+  background: var(--color-red-700);
+}
+.gt-swal-danger:focus-visible {
+  outline-color: var(--color-red-500);
+}
+.gt-swal-cancel {
+  background: rgb(15 23 42 / 0.06);
+  color: var(--color-slate-700);
+}
+.gt-swal-cancel:hover {
+  background: rgb(15 23 42 / 0.1);
+}
+
+/* Ikon: lingkaran lembut berwarna dengan ikon garis (seperti ikon lain di aplikasi) */
+.gt-tone-success,
+.gt-tone-question {
+  --tone-fg: var(--color-brand-700);
+  --tone-bg: var(--color-brand-100);
+  --tone-ring: var(--color-brand-50);
+}
+.gt-tone-error,
+.gt-tone-danger {
+  --tone-fg: var(--color-red-600);
+  --tone-bg: var(--color-red-100);
+  --tone-ring: var(--color-red-50);
+}
+.gt-tone-warning {
+  --tone-fg: var(--color-amber-600);
+  --tone-bg: var(--color-amber-100);
+  --tone-ring: var(--color-amber-50);
+}
+.swal2-icon.gt-swal-icon {
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto 1.25rem;
+  border: 0;
+  color: var(--tone-fg);
+  background: var(--tone-bg);
+  box-shadow: 0 0 0 0.5rem var(--tone-ring);
+  line-height: 1;
+}
+.swal2-icon.gt-swal-icon .swal2-icon-content {
+  font-size: 1rem;
+}
+.swal2-icon.gt-swal-icon svg {
+  width: 1.875rem;
+  height: 1.875rem;
+}
+.swal2-icon.gt-swal-icon.swal2-icon-show {
+  animation: gt-swal-icon-pop 0.45s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+.swal2-icon.gt-swal-icon.swal2-icon-show .swal2-icon-content {
+  animation: none;
+}
+/* Tanda centang "tergambar" saat muncul */
+.swal2-icon.gt-tone-success svg path {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: gt-swal-draw 0.35s 0.2s ease-out forwards;
+}
+@keyframes gt-swal-icon-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes gt-swal-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Notifikasi singkat di atas layar */
+.gt-toast-container {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+.swal2-popup.gt-toast {
+  --swal2-timer-progress-bar-background: color-mix(in oklab, var(--color-brand-500) 55%, transparent);
+  width: auto;
+  max-width: calc(100vw - 2rem);
+  padding: 0.625rem 1.125rem 0.625rem 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.85);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 0.88);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    0 16px 40px -12px rgb(15 23 42 / 0.3),
+    0 2px 6px rgb(15 23 42 / 0.06);
+}
+.swal2-toast .swal2-icon.gt-swal-icon {
+  width: 2.25rem;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  margin: 0 0.25rem 0 0;
+  box-shadow: none;
+}
+.swal2-toast .swal2-icon.gt-swal-icon svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+.swal2-toast .gt-toast-title {
+  margin: 0 0 0 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-slate-800);
+}
+
+/* Browser lama / "kurangi transparansi": jendela padat tanpa efek kaca */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .gt-swal-container {
+    --swal2-background: #fff;
+    --swal2-backdrop: rgb(15 23 42 / 0.45);
+  }
+  .swal2-popup.gt-toast {
+    background: #fff;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .gt-swal-container {
+    --swal2-background: #fff;
+    --swal2-backdrop: rgb(15 23 42 / 0.45);
+  }
+  .gt-swal-container.swal2-backdrop-show,
+  .swal2-popup.gt-swal,
+  .swal2-popup.gt-toast {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .swal2-popup.gt-toast {
+    background: #fff;
+  }
 }
 
 /* Hormati pengaturan "kurangi gerakan" di perangkat pengguna. Durasi tetap > 0 agar

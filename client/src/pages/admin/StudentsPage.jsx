@@ -5,6 +5,7 @@ import { KeyRound, Search } from 'lucide-react'
 import api, { getErrorMessage } from '../../lib/api.js'
 import { classLabel, useClassrooms } from '../../lib/queries.js'
 import { lastSeen } from '../../lib/format.js'
+import { confirmResetPassword } from '../../lib/alert.js'
 import { Alert, Avatar, Select, Spinner } from '../../components/ui.jsx'
 import { AccountStatus, PageHeader, Pagination, Panel } from '../../components/admin/AdminUI.jsx'
 
@@ -49,10 +50,7 @@ export default function StudentsPage() {
       students.refetch()
     },
   })
-  const confirmReset = (s) =>
-    window.confirm(
-      `Reset password akun orang tua ${s.fullName}?\n\nRiwayat chat terenkripsi akun ini tidak bisa dibuka lagi setelah reset.`,
-    ) && reset.mutate(s.parent.id)
+  const confirmReset = async (s) => (await confirmResetPassword(`akun orang tua ${s.fullName}`)) && reset.mutate(s.parent.id)
 
   const items = students.data?.items ?? []
 

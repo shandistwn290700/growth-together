@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { useOverlay } from '../lib/overlay.js'
 import { motionDelay } from '../lib/motion.js'
+import { confirmAction } from '../lib/alert.js'
 
 const SIZES = { md: 'sm:max-w-lg', lg: 'sm:max-w-2xl' }
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -11,7 +12,8 @@ const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabi
 // jendelanya sendiri tembus pandang buram. Di HP muncul dari bawah sebagai lembar (sheet).
 // - onClose dipanggil setelah animasi tutup selesai.
 // - locked: jendela tidak bisa ditutup (mis. saat upload berjalan).
-// - confirmClose: teks konfirmasi sebelum ditutup (mis. ada tulisan yang belum diposting).
+// - confirmClose: { title, text, confirmText, cancelText } untuk konfirmasi sebelum ditutup
+//   (mis. ada tulisan yang belum diposting).
 // - ref.current.close(): tutup dari dalam tanpa konfirmasi (mis. setelah berhasil posting).
 export default function GlassDialog({ ref, title, onClose, locked = false, confirmClose, footer, size = 'md', children }) {
   const titleId = useId()
@@ -23,9 +25,15 @@ export default function GlassDialog({ ref, title, onClose, locked = false, confi
     setClosing(true)
     setTimeout(onClose, motionDelay(180))
   }
-  const requestClose = () => {
-    if (locked || closing) return
-    if (confirmClose && !window.confirm(confirmClose)) return
+  const asking = useRef(false)
+  const requestClose = async () => {
+    if (locked || closing || asking.current) return
+    if (confirmClose) {
+      asking.current = true
+      const ok = await confirmAction({ tone: 'warning', ...confirmClose })
+      asking.current = false
+      if (!ok) return
+    }
     finish()
   }
   useImperativeHandle(ref, () => ({ close: finish }))

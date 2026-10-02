@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
-import { useOverlay } from '../../lib/overlay.js'
-import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Maximize2, Play } from 'lucide-react'
+import MediaViewer from './MediaViewer.jsx'
 
-function VideoPlayer({ media, className = '' }) {
+export function VideoPlayer({ media, className = '', ...props }) {
   return (
-    <video controls playsInline preload="none" poster={media.posterUrl} className={`bg-black ${className}`}>
+    <video controls playsInline preload="none" poster={media.posterUrl} className={`bg-black ${className}`} {...props}>
       <source src={media.url} type="video/mp4" />
       {/* Cadangan jika versi yang dikompres Cloudinary belum selesai diproses */}
       <source src={media.originalUrl} />
@@ -34,20 +33,41 @@ function Thumb({ media, onOpen, overlay }) {
 }
 
 // Tata letak seperti Facebook: 1 media penuh, 2 berdampingan, 3+ grid dengan "+N" di kotak terakhir.
-export default function MediaGrid({ media }) {
+// Mengklik media membuka penampil layar penuh yang tetap menampilkan caption, reaksi, dan komentar.
+export default function MediaGrid({ post }) {
+  const media = post.media
   const [openIndex, setOpenIndex] = useState(null)
+  const inlineVideo = useRef(null)
   if (!media?.length) return null
+
+  const viewer = openIndex !== null && (
+    <MediaViewer media={media} index={openIndex} onIndexChange={setOpenIndex} onClose={() => setOpenIndex(null)} post={post} />
+  )
 
   if (media.length === 1) {
     const only = media[0]
     return only.type === 'video' ? (
-      <VideoPlayer media={only} className="max-h-[70vh] w-full" />
+      <div className="relative">
+        <VideoPlayer ref={inlineVideo} media={only} className="max-h-[70vh] w-full" />
+        <button
+          onClick={() => {
+            inlineVideo.current?.pause() // lanjut ditonton di layar penuh, jangan berbunyi dobel
+            setOpenIndex(0)
+          }}
+          className="absolute top-2 right-2 flex size-9 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
+          aria-label="Buka layar penuh"
+          title="Buka layar penuh"
+        >
+          <Maximize2 className="size-4" />
+        </button>
+        {viewer}
+      </div>
     ) : (
       <>
         <button onClick={() => setOpenIndex(0)} className="block w-full bg-slate-100" aria-label="Lihat foto">
           <img src={only.url} alt="" loading="lazy" className="mx-auto max-h-[70vh] object-contain" />
         </button>
-        {openIndex !== null && <Lightbox media={media} index={openIndex} onChange={setOpenIndex} />}
+        {viewer}
       </>
     )
   }
@@ -68,71 +88,7 @@ export default function MediaGrid({ media }) {
           </div>
         ))}
       </div>
-      {openIndex !== null && <Lightbox media={media} index={openIndex} onChange={setOpenIndex} />}
+      {viewer}
     </>
-  )
-}
-
-export function Lightbox({ media, index, onChange }) {
-  const current = media[index]
-  const close = () => onChange(null)
-  const go = (delta) => onChange((index + delta + media.length) % media.length)
-
-  useOverlay(close)
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === 'ArrowRight') onChange((index + 1) % media.length)
-      if (e.key === 'ArrowLeft') onChange((index - 1 + media.length) % media.length)
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [index, media.length, onChange])
-
-  // Dirender langsung di <body> agar tetap layar penuh walau dibuka dari dalam jendela komentar.
-  return createPortal(
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[70] flex items-center justify-center bg-black/95" onClick={close}>
-      <div className="max-h-full max-w-full p-4" onClick={(e) => e.stopPropagation()}>
-        {current.type === 'video' ? (
-          <VideoPlayer key={current.id} media={current} className="max-h-[85vh] max-w-full" />
-        ) : (
-          <img src={current.url} alt="" className="max-h-[85vh] max-w-full object-contain" />
-        )}
-      </div>
-      <button
-        onClick={close}
-        className="absolute top-3 right-3 flex size-10 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25"
-        aria-label="Tutup"
-      >
-        <X className="size-6" />
-      </button>
-      {media.length > 1 && (
-        <>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              go(-1)
-            }}
-            className="absolute left-3 flex size-10 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25"
-            aria-label="Sebelumnya"
-          >
-            <ChevronLeft className="size-6" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              go(1)
-            }}
-            className="absolute right-3 flex size-10 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25"
-            aria-label="Berikutnya"
-          >
-            <ChevronRight className="size-6" />
-          </button>
-          <span className="absolute bottom-4 rounded-full bg-white/15 px-3 py-1 text-sm text-white">
-            {index + 1} / {media.length}
-          </span>
-        </>
-      )}
-    </div>,
-    document.body,
   )
 }

@@ -5,6 +5,7 @@ import { useMe } from '../../lib/auth.js'
 import { classLabel, useClassrooms } from '../../lib/queries.js'
 import { MAX_FILES, mediaTypeOf, uploadToCloudinary, validateFile } from '../../lib/upload.js'
 import { addNewPost } from '../../lib/feedCache.js'
+import { notify } from '../../lib/alert.js'
 import { Image, School, Star, Tag, Users, X } from 'lucide-react'
 import { Alert, Avatar, Button, Card, Select } from '../ui.jsx'
 import GlassDialog from '../GlassDialog.jsx'
@@ -160,6 +161,7 @@ function ComposerForm({ me, initialFiles, onClose }) {
     onSuccess: (post) => {
       addNewPost(queryClient, post)
       dialog.current.close()
+      notify('Postingan dibagikan')
     },
   })
 
@@ -175,7 +177,9 @@ function ComposerForm({ me, initialFiles, onClose }) {
       title="Buat postingan"
       onClose={onClose}
       locked={submit.isPending}
-      confirmClose={dirty ? 'Buang postingan ini? Tulisan dan foto yang dipilih akan hilang.' : null}
+      confirmClose={
+        dirty ? { title: 'Buang postingan ini?', text: 'Tulisan dan foto yang dipilih akan hilang.', confirmText: 'Buang', cancelText: 'Lanjut menulis' } : null
+      }
       footer={
         <Button onClick={() => submit.mutate()} disabled={!canSubmit} className="w-full py-2.5 text-base">
           {submit.isPending ? (files.length ? `Mengunggah ${uploaded}/${files.length}…` : 'Memposting…') : 'Posting'}

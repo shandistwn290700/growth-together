@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, KeyRound } from 'lucide-react'
 import api, { getErrorMessage } from '../lib/api.js'
 import { useMe } from '../lib/auth.js'
+import { confirmAction, confirmResetPassword, notify } from '../lib/alert.js'
 import { ENROLLMENT_STATUS, classLabel, useAcademicYears, useClassroomBase, useClassrooms, useTeachers } from '../lib/queries.js'
 import { Alert, Avatar, Badge, Button, Card, Select, Spinner } from '../components/ui.jsx'
 import { TeacherPicker } from './ClassroomsPage.jsx'
@@ -65,6 +66,7 @@ function EditTeachers({ classroom }) {
       queryClient.invalidateQueries({ queryKey: ['classroom', String(classroom.id)] })
       queryClient.invalidateQueries({ queryKey: ['classrooms'] })
       setOpen(false)
+      notify('Wali kelas diperbarui')
     },
   })
 
@@ -103,11 +105,8 @@ function StudentTable({ classroom, isAdmin }) {
     onSuccess: setResetResult,
   })
 
-  const confirmReset = (student) => {
-    const ok = window.confirm(
-      `Reset password akun orang tua ${student.fullName}?\n\nRiwayat chat terenkripsi akun ini tidak bisa dibuka lagi setelah reset.`,
-    )
-    if (ok) reset.mutate(student.parentAccount.id)
+  const confirmReset = async (student) => {
+    if (await confirmResetPassword(`akun orang tua ${student.fullName}`)) reset.mutate(student.parentAccount.id)
   }
 
   return (
@@ -280,15 +279,19 @@ function PromotionPanel({ classroom, students }) {
   const missingTarget = decisions.some((d) => ['promote', 'retain'].includes(d.action) && !d.targetClassroomId)
   const needsTargetYear = decisions.some((d) => ['promote', 'retain'].includes(d.action))
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const counts = Object.entries(ACTION_LABELS)
       .map(([action, label]) => [label, decisions.filter((d) => d.action === action).length])
       .filter(([, n]) => n > 0)
       .map(([label, n]) => `${label}: ${n} siswa`)
       .join('\n')
-    if (window.confirm(`Proses kenaikan ${classLabel(classroom)}?\n\n${counts}\n\nProses ini tidak bisa dibatalkan.`)) {
-      submit.mutate({ targetAcademicYearId: targetYearId, decisions })
-    }
+    const ok = await confirmAction({
+      title: `Proses kenaikan ${classLabel(classroom)}?`,
+      text: `${counts}\n\nProses ini tidak bisa dibatalkan.`,
+      confirmText: 'Ya, proses',
+      tone: 'warning',
+    })
+    if (ok) submit.mutate({ targetAcademicYearId: targetYearId, decisions })
   }
 
   if (years.isPending) return <Spinner />

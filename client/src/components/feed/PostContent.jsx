@@ -5,6 +5,7 @@ import api, { getErrorMessage } from '../../lib/api.js'
 import { useMe } from '../../lib/auth.js'
 import { audienceLabel, authorName, fullDate, timeAgo } from '../../lib/format.js'
 import { removePost } from '../../lib/feedCache.js'
+import { confirmDeletePost, notify, showError } from '../../lib/alert.js'
 import { Ellipsis, Megaphone, MessageCircle } from 'lucide-react'
 import { Avatar } from '../ui.jsx'
 import MediaGrid from './MediaGrid.jsx'
@@ -33,9 +34,10 @@ function TaggedLine({ post }) {
   )
 }
 
-// Isi satu postingan: dipakai di kartu feed dan di jendela komentar.
-// onEdit hanya diberikan di kartu feed (menu ⋯ tidak ditampilkan di dalam jendela komentar).
-export default function PostContent({ post, onComments, onEdit }) {
+// Isi satu postingan: dipakai di kartu feed, jendela komentar, dan panel penampil foto.
+// onEdit hanya diberikan di kartu feed (menu ⋯ tidak ditampilkan di tempat lain).
+// hideMedia: foto/video tidak ditampilkan (di penampil foto, medianya sudah tampil besar di sebelah).
+export default function PostContent({ post, onComments, onEdit, hideMedia = false }) {
   const { data: me } = useMe()
   const isStaff = me.role !== 'parent'
 
@@ -75,7 +77,7 @@ export default function PostContent({ post, onComments, onEdit }) {
 
       <div className="px-4 py-3">{post.caption && <p className="break-words whitespace-pre-line">{post.caption}</p>}</div>
 
-      <MediaGrid media={post.media} />
+      {!hideMedia && <MediaGrid post={post} />}
 
       <div className="flex items-center justify-between px-4 py-2">
         <ReactionSummary post={post} canSeeNames={isStaff} />
@@ -113,8 +115,11 @@ function PostMenu({ post, onEdit }) {
 
   const remove = useMutation({
     mutationFn: () => api.delete(`/posts/${post.id}`),
-    onSuccess: () => removePost(queryClient, post.id),
-    onError: (err) => window.alert(getErrorMessage(err)),
+    onSuccess: () => {
+      removePost(queryClient, post.id)
+      notify('Postingan dihapus')
+    },
+    onError: (err) => showError(getErrorMessage(err), 'Postingan gagal dihapus'),
   })
 
   return (
@@ -145,9 +150,9 @@ function PostMenu({ post, onEdit }) {
             <button
               role="menuitem"
               disabled={remove.isPending}
-              onClick={() => {
+              onClick={async () => {
                 setOpen(false)
-                if (window.confirm('Hapus postingan ini beserta foto/videonya? Tindakan ini tidak bisa dibatalkan.')) remove.mutate()
+                if (await confirmDeletePost()) remove.mutate()
               }}
               className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
             >

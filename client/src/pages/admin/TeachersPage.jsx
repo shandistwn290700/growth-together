@@ -5,6 +5,7 @@ import { KeyRound, Power } from 'lucide-react'
 import api, { getErrorMessage } from '../../lib/api.js'
 import { useTeachers } from '../../lib/queries.js'
 import { lastSeen } from '../../lib/format.js'
+import { confirmAction, confirmResetPassword, notify } from '../../lib/alert.js'
 import { Alert, Avatar, Spinner } from '../../components/ui.jsx'
 import { AccountStatus, PageHeader, Panel } from '../../components/admin/AdminUI.jsx'
 
@@ -22,15 +23,24 @@ export default function TeachersPage() {
   })
   const toggleActive = useMutation({
     mutationFn: ({ id, isActive }) => api.patch(`/admin/users/${id}/status`, { isActive }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['teachers'] }),
+    onSuccess: (_, { isActive }) => {
+      queryClient.invalidateQueries({ queryKey: ['teachers'] })
+      notify(isActive ? 'Akun guru diaktifkan' : 'Akun guru dinonaktifkan')
+    },
   })
 
-  const confirmReset = (t) =>
-    window.confirm(`Reset password ${t.fullName}?\n\nRiwayat chat terenkripsi akun ini tidak bisa dibuka lagi setelah reset.`) &&
-    reset.mutate(t.id)
-  const confirmToggle = (t) =>
-    (t.isActive ? window.confirm(`Nonaktifkan akun ${t.fullName}? Guru ini tidak akan bisa login.`) : true) &&
-    toggleActive.mutate({ id: t.id, isActive: !t.isActive })
+  const confirmReset = async (t) => (await confirmResetPassword(t.fullName)) && reset.mutate(t.id)
+  const confirmToggle = async (t) => {
+    const ok =
+      !t.isActive ||
+      (await confirmAction({
+        title: `Nonaktifkan akun ${t.fullName}?`,
+        text: 'Guru ini tidak akan bisa login sampai akunnya diaktifkan lagi.',
+        confirmText: 'Nonaktifkan',
+        tone: 'danger',
+      }))
+    if (ok) toggleActive.mutate({ id: t.id, isActive: !t.isActive })
+  }
 
   const list = teachers.data ?? []
   const action = 'inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold hover:bg-brand-50'
