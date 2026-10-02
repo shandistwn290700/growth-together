@@ -32,7 +32,8 @@ export default function LoginPage() {
   useEffect(() => {
     if (!welcome) return
     const timer = setTimeout(
-      () => navigate(welcome.mustChangePassword ? '/ganti-password' : '/', { replace: true }),
+      // Admin langsung masuk ke panel admin; guru & orang tua ke Beranda.
+      () => navigate(welcome.mustChangePassword ? '/ganti-password' : welcome.role === 'admin' ? '/admin' : '/', { replace: true }),
       motionDelay(1100),
     )
     return () => clearTimeout(timer)

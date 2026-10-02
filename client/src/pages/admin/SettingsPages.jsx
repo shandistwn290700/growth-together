@@ -1,31 +1,39 @@
-import { useEffect, useRef, useState } from 'react'
-import { useLocation } from 'react-router'
+import { useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Check, FileSpreadsheet, Palette, Sprout } from 'lucide-react'
-import api, { downloadBlob, getErrorMessage } from '../lib/api.js'
-import { useAcademicYears, useTeachers } from '../lib/queries.js'
-import { DEFAULT_THEME, THEMES, applyTheme } from '../lib/theme.js'
-import { APPEARANCE_KEY, useAppearance } from '../lib/useAppearance.js'
-import { Alert, Badge, Button, Card, Field, Input, Spinner } from '../components/ui.jsx'
-import { IconBadge } from '../components/Icons.jsx'
+import api, { downloadBlob, getErrorMessage } from '../../lib/api.js'
+import { useAcademicYears } from '../../lib/queries.js'
+import { DEFAULT_THEME, THEMES, applyTheme } from '../../lib/theme.js'
+import { APPEARANCE_KEY, useAppearance } from '../../lib/useAppearance.js'
+import { Alert, Badge, Button, Card, Field, Input, Spinner } from '../../components/ui.jsx'
+import { IconBadge } from '../../components/Icons.jsx'
+import { PageHeader } from '../../components/admin/AdminUI.jsx'
 
-export default function AdminPage() {
-  // Tautan "/admin#tema" (dari menu akun) langsung menggulir ke bagian tema warna.
-  const { hash } = useLocation()
-  useEffect(() => {
-    if (!hash) return
-    const frame = requestAnimationFrame(() => document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' }))
-    return () => cancelAnimationFrame(frame)
-  }, [hash])
-
+// Halaman pengaturan panel admin. Isi tiap halaman memakai komponen bagian di bawah.
+export function AcademicYearsPage() {
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-extrabold">Admin</h1>
+    <>
+      <PageHeader title="Tahun Ajaran" description="Hanya satu tahun ajaran yang aktif. Postingan baru masuk ke kelas di tahun ajaran aktif." />
       <AcademicYearSection />
-      <ThemeSection />
+    </>
+  )
+}
+
+export function ImportPage() {
+  return (
+    <>
+      <PageHeader title="Import Akun" description="Tambah siswa (beserta akun orang tua) dan guru sekaligus dari file Excel." />
       <ImportSection />
-      <TeacherSection />
-    </div>
+    </>
+  )
+}
+
+export function ThemePage() {
+  return (
+    <>
+      <PageHeader title="Tema Warna" description="Berlaku untuk semua pengguna, termasuk halaman login." />
+      <ThemeSection />
+    </>
   )
 }
 
@@ -52,16 +60,12 @@ function ThemeSection() {
   })
 
   return (
-    <Card className="scroll-mt-20 space-y-4" id="tema">
+    <Card className="space-y-4">
       <div className="flex items-start gap-3">
         <IconBadge icon={Palette} />
-        <div>
-          <h2 className="text-lg font-bold">Tema warna</h2>
-          <p className="text-sm text-slate-600">
-            Warna tombol, ikon, dan tautan untuk <b>semua pengguna</b>. Pengguna lain melihat tema baru saat membuka atau kembali ke
-            aplikasi.
-          </p>
-        </div>
+        <p className="text-sm text-slate-600">
+          Pilih warna untuk tombol, ikon, dan tautan. Pengguna lain melihat tema baru saat membuka atau kembali ke aplikasi.
+        </p>
       </div>
 
       {save.isError && <Alert>{getErrorMessage(save.error)}</Alert>}
@@ -136,7 +140,7 @@ function AcademicYearSection() {
   return (
     <Card className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-bold">Tahun ajaran</h2>
+        <h2 className="text-lg font-bold">Daftar tahun ajaran</h2>
         {!form && (
           <Button variant="secondary" onClick={() => setForm(suggestNextYear(years.data))}>
             + Tahun ajaran baru
@@ -250,12 +254,11 @@ function ImportSection() {
 
   return (
     <Card className="space-y-3">
-      <div>
-        <h2 className="text-lg font-bold">Import akun dari Excel</h2>
-        <p className="text-sm text-slate-600">
-          Untuk siswa (beserta akun orang tuanya) dan guru. Siswa dimasukkan ke kelas di tahun ajaran aktif.
-        </p>
-      </div>
+      <ol className="list-inside list-decimal space-y-0.5 text-sm text-slate-600">
+        <li>Unduh template, lalu isi sheet Siswa dan/atau Guru.</li>
+        <li>Upload file. Siswa dimasukkan ke kelas di tahun ajaran aktif (kelas dibuat otomatis jika belum ada).</li>
+        <li>Unduh daftar password awal dan bagikan ke guru & orang tua.</li>
+      </ol>
 
       <div className="flex flex-wrap gap-2">
         <Button variant="secondary" onClick={() => template.mutate()} disabled={template.isPending}>
@@ -325,75 +328,6 @@ function ImportSection() {
           </Alert>
           <Button onClick={downloadCredentials}>{downloaded ? 'Unduh lagi daftar password' : 'Unduh daftar password awal'}</Button>
         </div>
-      )}
-    </Card>
-  )
-}
-
-// ---------- Guru ----------
-
-function TeacherSection() {
-  const queryClient = useQueryClient()
-  const teachers = useTeachers()
-  const [resetResult, setResetResult] = useState(null)
-
-  const reset = useMutation({
-    mutationFn: (id) => api.post(`/admin/users/${id}/reset-password`).then((res) => res.data),
-    onSuccess: setResetResult,
-  })
-  const toggleActive = useMutation({
-    mutationFn: ({ id, isActive }) => api.patch(`/admin/users/${id}/status`, { isActive }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['teachers'] }),
-  })
-
-  return (
-    <Card className="space-y-3">
-      <h2 className="text-lg font-bold">Guru</h2>
-      {(reset.isError || toggleActive.isError) && <Alert>{getErrorMessage(reset.error ?? toggleActive.error)}</Alert>}
-      {resetResult && (
-        <Alert variant="success">
-          Password baru untuk <b>{resetResult.username}</b>: <code className="font-mono font-bold">{resetResult.password}</code>
-          <br />
-          Catat sekarang, password ini tidak akan ditampilkan lagi.
-        </Alert>
-      )}
-      {teachers.isPending ? (
-        <Spinner />
-      ) : teachers.data.length === 0 ? (
-        <p className="text-sm text-slate-600">Belum ada guru. Tambahkan lewat import Excel.</p>
-      ) : (
-        <ul className="divide-y divide-slate-100">
-          {teachers.data.map((t) => (
-            <li key={t.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-              <div>
-                <span className="font-semibold">{t.fullName}</span>{' '}
-                {!t.isActive && <Badge>Nonaktif</Badge>}
-                {t.isActive && t.mustChangePassword && <Badge variant="amber">Belum login</Badge>}
-                <div className="text-xs text-slate-500">{t.username}</div>
-              </div>
-              <div className="flex gap-3 text-xs font-semibold">
-                <button
-                  className="text-slate-500 hover:text-red-600"
-                  disabled={reset.isPending}
-                  onClick={() =>
-                    window.confirm(
-                      `Reset password ${t.fullName}?\n\nRiwayat chat terenkripsi akun ini tidak bisa dibuka lagi setelah reset.`,
-                    ) && reset.mutate(t.id)
-                  }
-                >
-                  Reset password
-                </button>
-                <button
-                  className="text-slate-500 hover:text-brand-700"
-                  disabled={toggleActive.isPending}
-                  onClick={() => toggleActive.mutate({ id: t.id, isActive: !t.isActive })}
-                >
-                  {t.isActive ? 'Nonaktifkan' : 'Aktifkan'}
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
       )}
     </Card>
   )

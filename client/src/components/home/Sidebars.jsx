@@ -61,8 +61,8 @@ export function LeftSidebar() {
         hint={isParent ? 'Perjalanan kelas & galeri' : undefined}
       />
       {me.role !== 'admin' && <SidebarLink to="/chat" icon={MessageCircle} label="Chat" hint="Terenkripsi end-to-end" badge={unread} />}
-      {me.role !== 'parent' && <SidebarLink to="/kelas" icon={GraduationCap} label={me.role === 'admin' ? 'Semua kelas' : 'Kelas'} />}
-      {me.role === 'admin' && <SidebarLink to="/admin" icon={Shield} label="Admin" hint="Tahun ajaran, import akun, tema" />}
+      {me.role === 'teacher' && <SidebarLink to="/kelas" icon={GraduationCap} label="Kelas" />}
+      {me.role === 'admin' && <SidebarLink to="/admin" icon={Shield} label="Panel Admin" hint="Dashboard, kelas, akun, moderasi" />}
 
       {me.role === 'teacher' && <TeacherClasses me={me} />}
       {isParent && <ChildClass me={me} />}
@@ -186,9 +186,9 @@ function AdminSummary() {
         ))}
       </div>
       <div className="mt-2">
-        <SidebarLink to="/admin" icon={FileSpreadsheet} label="Import akun dari Excel" />
-        <SidebarLink to="/kelas" icon={TrendingUp} label="Proses kenaikan kelas" />
-        <SidebarLink to="/admin#tema" icon={Palette} label="Ganti tema warna" />
+        <SidebarLink to="/admin/import" icon={FileSpreadsheet} label="Import akun dari Excel" />
+        <SidebarLink to="/admin/kelas" icon={TrendingUp} label="Proses kenaikan kelas" />
+        <SidebarLink to="/admin/tema" icon={Palette} label="Ganti tema warna" />
       </div>
     </section>
   )

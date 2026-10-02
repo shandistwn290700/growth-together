@@ -15,6 +15,7 @@ const ReactionController = require('../controllers/reactionController');
 const StudentController = require('../controllers/studentController');
 const ChatController = require('../controllers/chatController');
 const SettingsController = require('../controllers/settingsController');
+const AdminController = require('../controllers/adminController');
 
 const router = express.Router();
 
@@ -106,6 +107,9 @@ router.post('/conversations/:id/messages', ChatController.send);
 router.post('/conversations/:id/read', ChatController.markRead);
 
 router.put('/admin/settings/appearance', authorize('admin'), SettingsController.updateAppearance);
+router.get('/admin/stats', authorize('admin'), AdminController.stats);
+router.get('/admin/students', authorize('admin'), AdminController.students);
+router.get('/admin/posts', authorize('admin'), AdminController.posts);
 router.get('/admin/teachers', authorize('admin'), UserController.listTeachers);
 router.post('/admin/users/:id/reset-password', authorize('admin'), UserController.resetPassword);
 router.patch('/admin/users/:id/status', authorize('admin'), UserController.setActive);

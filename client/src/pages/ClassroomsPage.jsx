@@ -3,12 +3,13 @@ import { Link } from 'react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../lib/api.js'
 import { useMe } from '../lib/auth.js'
-import { classLabel, useAcademicYears, useClassrooms, useTeachers } from '../lib/queries.js'
+import { classLabel, useAcademicYears, useClassroomBase, useClassrooms, useTeachers } from '../lib/queries.js'
 import { Alert, Button, Card, Field, Input, Select, Spinner } from '../components/ui.jsx'
 
 export default function ClassroomsPage() {
   const { data: me } = useMe()
   const isAdmin = me.role === 'admin'
+  const base = useClassroomBase()
   const years = useAcademicYears()
   const [selectedYearId, setSelectedYearId] = useState('')
 
@@ -25,8 +26,8 @@ export default function ClassroomsPage() {
         <p className="mt-1 text-slate-600">
           Belum ada tahun ajaran.{' '}
           {isAdmin ? (
-            <Link to="/admin" className="font-semibold text-brand-700 underline">
-              Buat tahun ajaran di halaman Admin
+            <Link to="/admin/tahun-ajaran" className="font-semibold text-brand-700 underline">
+              Buat tahun ajaran terlebih dahulu
             </Link>
           ) : (
             'Hubungi admin sekolah.'
@@ -78,7 +79,7 @@ export default function ClassroomsPage() {
               {items.map((c) => (
                 <Link
                   key={c.id}
-                  to={`/kelas/${c.id}`}
+                  to={`${base}/${c.id}`}
                   className="rounded-xl bg-white p-4 shadow-sm transition hover:shadow-md hover:ring-2 hover:ring-brand-100"
                 >
                   <div className="text-lg font-bold text-brand-700">{classLabel(c)}</div>

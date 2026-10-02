@@ -1,5 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
+import { useLocation } from 'react-router'
 import api from './api.js'
+
+// Halaman kelas dipakai guru (/kelas) dan admin (/admin/kelas); tautan menyesuaikan tempatnya.
+export function useClassroomBase() {
+  return useLocation().pathname.startsWith('/admin') ? '/admin/kelas' : '/kelas'
+}
 
 const get = (url, params) => api.get(url, { params }).then((res) => res.data)
 

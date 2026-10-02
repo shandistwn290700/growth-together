@@ -13,7 +13,17 @@ const ChatPage = lazy(() => import('./pages/ChatPage.jsx'))
 const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage.jsx'))
 const ClassroomsPage = lazy(() => import('./pages/ClassroomsPage.jsx'))
 const ClassroomDetailPage = lazy(() => import('./pages/ClassroomDetailPage.jsx'))
-const AdminPage = lazy(() => import('./pages/AdminPage.jsx'))
+
+// Panel admin (terpisah dari Beranda)
+const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'))
+const DashboardPage = lazy(() => import('./pages/admin/DashboardPage.jsx'))
+const StudentsPage = lazy(() => import('./pages/admin/StudentsPage.jsx'))
+const TeachersPage = lazy(() => import('./pages/admin/TeachersPage.jsx'))
+const ModerationPage = lazy(() => import('./pages/admin/ModerationPage.jsx'))
+const settings = () => import('./pages/admin/SettingsPages.jsx')
+const AcademicYearsPage = lazy(() => settings().then((m) => ({ default: m.AcademicYearsPage })))
+const ImportPage = lazy(() => settings().then((m) => ({ default: m.ImportPage })))
+const ThemePage = lazy(() => settings().then((m) => ({ default: m.ThemePage })))
 
 export default function App() {
   return (
@@ -37,8 +47,19 @@ export default function App() {
               <Route path="kelas" element={<ClassroomsPage />} />
               <Route path="kelas/:id" element={<ClassroomDetailPage />} />
             </Route>
-            <Route element={<RequireRole roles={['admin']} />}>
-              <Route path="admin" element={<AdminPage />} />
+          </Route>
+
+          <Route element={<RequireRole roles={['admin']} />}>
+            <Route path="admin" element={<AdminLayout />}>
+              <Route index element={<DashboardPage />} />
+              <Route path="kelas" element={<ClassroomsPage />} />
+              <Route path="kelas/:id" element={<ClassroomDetailPage />} />
+              <Route path="siswa" element={<StudentsPage />} />
+              <Route path="guru" element={<TeachersPage />} />
+              <Route path="tahun-ajaran" element={<AcademicYearsPage />} />
+              <Route path="import" element={<ImportPage />} />
+              <Route path="moderasi" element={<ModerationPage />} />
+              <Route path="tema" element={<ThemePage />} />
             </Route>
           </Route>
         </Route>

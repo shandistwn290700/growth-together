@@ -25,6 +25,8 @@ class AuthController {
       throw { name: 'Unauthorized', message: 'Akun sudah dinonaktifkan, hubungi admin sekolah' };
     }
 
+    // `silent`: tidak mengubah updatedAt, karena ini bukan perubahan data akun.
+    await user.update({ lastLoginAt: new Date() }, { silent: true });
     res.json({ access_token: signToken({ id: user.id }), user: toUserDto(user) });
   }
 

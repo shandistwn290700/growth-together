@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, KeyRound } from 'lucide-react'
 import api, { getErrorMessage } from '../lib/api.js'
 import { useMe } from '../lib/auth.js'
-import { ENROLLMENT_STATUS, classLabel, useAcademicYears, useClassrooms, useTeachers } from '../lib/queries.js'
+import { ENROLLMENT_STATUS, classLabel, useAcademicYears, useClassroomBase, useClassrooms, useTeachers } from '../lib/queries.js'
 import { Alert, Avatar, Badge, Button, Card, Select, Spinner } from '../components/ui.jsx'
 import { TeacherPicker } from './ClassroomsPage.jsx'
 
@@ -12,6 +12,7 @@ export default function ClassroomDetailPage() {
   const { id } = useParams()
   const { data: me } = useMe()
   const isAdmin = me.role === 'admin'
+  const base = useClassroomBase()
 
   const classroom = useQuery({
     queryKey: ['classroom', id],
@@ -26,7 +27,7 @@ export default function ClassroomDetailPage() {
 
   return (
     <div className="space-y-4">
-      <Link to="/kelas" className="inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline">
+      <Link to={base} className="inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline">
         <ArrowLeft className="size-4" strokeWidth={2.4} /> Kembali ke daftar kelas
       </Link>
 

@@ -531,6 +531,42 @@ const cli = (...args) =>
     r = await call('GET', '/settings/appearance');
     check('tema terbaru berlaku untuk semua (tersimpan di server)', r.data.theme === 'ungu', JSON.stringify(r.data));
 
+    // ================= PANEL ADMIN =================
+    console.log('\n--- Panel admin ---');
+    r = await call('GET', '/admin/stats', { token: siti.token });
+    check('statistik admin tertutup untuk guru -> 403', r.status === 403);
+    r = await call('GET', '/admin/stats', { token: admin });
+    check(
+      'statistik dashboard: angka total',
+      r.status === 200 && r.data.totals.students === 2 && r.data.totals.teachers === 2 && r.data.totals.posts > 0,
+      JSON.stringify(r.data.totals),
+    );
+    check('orang tua aktif: 2 dari 2 siswa aktif sudah login', r.data.totals.parents === 2 && r.data.totals.parentsActivated === 2, JSON.stringify(r.data.totals));
+    check('pengguna aktif 7 hari terakhir tercatat dari login', r.data.totals.activeUsers7d >= 4, JSON.stringify(r.data.totals));
+    check(
+      'grafik postingan: 12 minggu, minggu ini berisi postingan',
+      r.data.postsByWeek.length === 12 && r.data.postsByWeek.at(-1).count > 0,
+      JSON.stringify(r.data.postsByWeek.slice(-2)),
+    );
+    check('siswa per kelas di tahun ajaran aktif', r.data.studentsPerClass.length === 2, JSON.stringify(r.data.studentsPerClass));
+
+    r = await call('GET', '/admin/students?search=fauz', { token: admin });
+    check('cari siswa (tidak peka huruf besar/kecil)', r.data.total === 1 && r.data.items[0].fullName === 'Ahmad Fauzan', JSON.stringify(r.data));
+    check('data siswa berisi kelas dan akun orang tua', r.data.items[0].classroom?.label === 'Kelas 2 Abu Bakar' && r.data.items[0].parent?.username === 's001', JSON.stringify(r.data.items[0]));
+    r = await call('GET', `/admin/students?classroomId=${next1.id}`, { token: admin });
+    check('filter siswa per kelas', r.data.total === 1 && r.data.items[0].fullName === 'Aisyah Putri', JSON.stringify(r.data.items));
+    r = await call('GET', '/admin/students?limit=5&page=1', { token: admin });
+    check('daftar siswa berhalaman (total semua siswa)', r.data.total === 3 && r.data.items.length === 3, `${r.data.total}`);
+    r = await call('GET', '/admin/teachers', { token: admin });
+    check('daftar guru berisi kelas yang diampu & login terakhir', r.data.some((t) => t.classrooms.length > 0 && t.lastLoginAt), JSON.stringify(r.data));
+
+    r = await call('GET', '/admin/posts?search=manasik', { token: admin });
+    check('moderasi: cari postingan berdasarkan caption', r.status === 200 && r.data.items.length === 1, `${r.data.items?.length}`);
+    r = await call('GET', `/admin/posts?classroomId=${next2.id}`, { token: admin });
+    check('moderasi: filter postingan per kelas', r.data.items.length === 1 && r.data.items[0].caption === 'Ahmad di kelas 2', JSON.stringify(r.data.items.map((p) => p.caption)));
+    r = await call('GET', '/admin/posts', { token: hasan.token });
+    check('moderasi tertutup untuk guru -> 403', r.status === 403);
+
     // ================= TAHAP 5: CHAT E2EE =================
     console.log('\n--- Tahap 5 ---');
     const c = await import(require('url').pathToFileURL(path.join(SERVER, '..', 'client', 'src', 'lib', 'crypto.js')).href);

@@ -16,6 +16,18 @@ export function fullDate(value) {
   return new Date(value).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' })
 }
 
+const number = new Intl.NumberFormat('id-ID')
+export const formatNumber = (n) => number.format(n ?? 0)
+
+// Waktu login terakhir: "Hari ini", "3 hari yang lalu", lalu tanggal setelah sebulan.
+export function lastSeen(value) {
+  if (!value) return 'Belum pernah'
+  const days = Math.round((new Date(value).getTime() - Date.now()) / 86400_000)
+  if (days === 0) return 'Hari ini'
+  if (days > -30) return relative.format(days, 'day')
+  return new Date(value).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
 // Nama panggilan hanya ditampilkan jika ada dan berbeda dari nama lengkap.
 export function showNickname(student) {
   const nickname = student?.nickname?.trim()

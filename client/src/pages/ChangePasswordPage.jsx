@@ -22,7 +22,7 @@ export default function ChangePasswordPage() {
       await setupChatAfterLogin(data.user, body.newPassword)
       return data
     },
-    onSuccess: () => navigate('/', { replace: true }),
+    onSuccess: (data) => navigate(data.user.role === 'admin' ? '/admin' : '/', { replace: true }),
   })
 
   const update = (e) => setForm({ ...form, [e.target.name]: e.target.value })

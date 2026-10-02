@@ -1,20 +1,11 @@
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router'
-import { KeyRound, Palette } from 'lucide-react'
-import {
-  HomeIcon,
-  ChatIcon,
-  UserIcon,
-  SproutIcon,
-  ClassIcon,
-  ShieldIcon,
-  LogoutIcon,
-  IconBadge,
-} from '../components/Icons.jsx'
-import { ROLE_LABELS, useAuthActions, useMe } from '../lib/auth.js'
-import { Avatar, Spinner } from '../components/ui.jsx'
-import AuthSplash from '../components/AuthSplash.jsx'
-import { motionDelay } from '../lib/motion.js'
+import { LayoutDashboard } from 'lucide-react'
+import { HomeIcon, ChatIcon, UserIcon, SproutIcon, ClassIcon } from '../components/Icons.jsx'
+import { useMe } from '../lib/auth.js'
+import { useDismiss } from '../lib/useDismiss.js'
+import { Spinner } from '../components/ui.jsx'
+import AccountMenu from '../components/AccountMenu.jsx'
 import { ChatProvider } from '../components/chat/ChatProvider.jsx'
 import ChatDock from '../components/chat/ChatDock.jsx'
 import ConversationList from '../components/chat/ConversationList.jsx'
@@ -24,9 +15,10 @@ import { LocalKeyContext, openConversation, useChat, useUnreadCount } from '../c
 const NAV_ITEMS = [
   { to: '/', label: 'Beranda', icon: HomeIcon, end: true, roles: ['admin', 'teacher', 'parent'] },
   { to: '/profil', label: 'Profil', icon: UserIcon, roles: ['admin', 'teacher', 'parent'] },
-  { to: '/kelas', label: 'Kelas', icon: ClassIcon, roles: ['admin', 'teacher'] },
+  { to: '/kelas', label: 'Kelas', icon: ClassIcon, roles: ['teacher'] },
   { to: '/chat', label: 'Chat', icon: ChatIcon, roles: ['teacher', 'parent'], mobileOnly: true },
-  { to: '/admin', label: 'Admin', icon: ShieldIcon, roles: ['admin'] },
+  // Admin mengelola kelas & data lain di panel admin yang terpisah.
+  { to: '/admin', label: 'Panel Admin', icon: LayoutDashboard, roles: ['admin'] },
 ]
 
 function Badge({ count }) {
@@ -52,14 +44,6 @@ function Layout() {
   const { data: unread = 0 } = useUnreadCount()
   const items = NAV_ITEMS.filter((item) => item.roles.includes(me.role))
   const canChat = me.role !== 'admin'
-  const { logout } = useAuthActions()
-  const [farewell, setFarewell] = useState(false)
-
-  // Logout: tampilkan layar perpisahan sebentar, lalu hapus sesi dan kembali ke halaman login.
-  const startLogout = () => {
-    setFarewell(true)
-    setTimeout(logout, motionDelay(800))
-  }
   // Beranda memakai tata letak 3 kolom yang lebar; halaman lain di tengah.
   const wide = pathname === '/'
   // Setiap pindah halaman: animasi masuk dan gulir ke atas. Berpindah antar-percakapan di
@@ -108,7 +92,7 @@ function Layout() {
 
           <div className="flex items-center justify-end gap-2 lg:w-[280px]">
             {canChat && <ChatMenu unread={unread} />}
-            <AccountMenu me={me} onLogout={startLogout} />
+            <AccountMenu me={me} />
           </div>
         </div>
       </header>
@@ -153,26 +137,8 @@ function Layout() {
       </nav>
 
       {canChat && <ChatDock />}
-      {farewell && <AuthSplash title={`Sampai jumpa, ${me.displayName}`} subtitle="Semoga harimu menyenangkan" />}
     </div>
   )
-}
-
-// Tutup popup saat klik di luar atau menekan Escape.
-function useDismiss(open, setOpen) {
-  const ref = useRef(null)
-  useEffect(() => {
-    if (!open) return
-    const close = (e) => !ref.current?.contains(e.target) && setOpen(false)
-    const onKey = (e) => e.key === 'Escape' && setOpen(false)
-    document.addEventListener('pointerdown', close)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('pointerdown', close)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open, setOpen])
-  return ref
 }
 
 // Tombol chat di bilah atas: membuka daftar percakapan. Memilih percakapan membuka jendela mini.
@@ -213,61 +179,6 @@ function ChatMenu({ unread }) {
           >
             Lihat semua di halaman Chat
           </Link>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// Avatar di pojok kanan atas dengan menu: lihat profil, ganti password, keluar.
-function AccountMenu({ me, onLogout }) {
-  const [open, setOpen] = useState(false)
-  const ref = useDismiss(open, setOpen)
-
-  const item = 'flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm font-semibold hover:bg-slate-100'
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        className="rounded-full ring-brand-100 hover:ring-4"
-        aria-label="Menu akun"
-        aria-expanded={open}
-      >
-        <Avatar name={me.displayName} src={me.avatarUrl} />
-      </button>
-      {open && (
-        <div role="menu" className="absolute right-0 z-40 mt-2 w-72 origin-top-right animate-menu-in rounded-xl bg-white p-2 shadow-xl ring-1 ring-slate-200">
-          <Link to="/profil" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-lg p-2 shadow-sm ring-1 ring-slate-100 hover:bg-slate-50">
-            <Avatar name={me.displayName} src={me.avatarUrl} />
-            <div className="min-w-0">
-              <div className="truncate font-bold">{me.displayName}</div>
-              <div className="text-xs text-slate-500">{ROLE_LABELS[me.role]} · lihat profil</div>
-            </div>
-          </Link>
-          <div className="mt-2 space-y-0.5">
-            <Link to="/ganti-password" onClick={() => setOpen(false)} className={item} role="menuitem">
-              <IconBadge icon={KeyRound} />
-              Ganti password
-            </Link>
-            {me.role === 'admin' && (
-              <Link to="/admin#tema" onClick={() => setOpen(false)} className={item} role="menuitem">
-                <IconBadge icon={Palette} />
-                Tema warna
-              </Link>
-            )}
-            <button
-              onClick={() => {
-                setOpen(false)
-                onLogout()
-              }}
-              className={item}
-              role="menuitem"
-            >
-              <IconBadge icon={LogoutIcon} />
-              Keluar
-            </button>
-          </div>
         </div>
       )}
     </div>

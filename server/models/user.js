@@ -50,6 +50,7 @@ module.exports = (sequelize, DataTypes) => {
       mustChangePassword: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
       isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
       passwordChangedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+      lastLoginAt: DataTypes.DATE,
     },
     {
       sequelize,
