@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { useOverlay } from '../../lib/overlay.js'
 import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react'
 
 function VideoPlayer({ media, className = '' }) {
@@ -76,22 +78,19 @@ export function Lightbox({ media, index, onChange }) {
   const close = () => onChange(null)
   const go = (delta) => onChange((index + delta + media.length) % media.length)
 
+  useOverlay(close)
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape') onChange(null)
       if (e.key === 'ArrowRight') onChange((index + 1) % media.length)
       if (e.key === 'ArrowLeft') onChange((index - 1 + media.length) % media.length)
     }
     document.addEventListener('keydown', onKey)
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = ''
-    }
+    return () => document.removeEventListener('keydown', onKey)
   }, [index, media.length, onChange])
 
-  return (
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/95" onClick={close}>
+  // Dirender langsung di <body> agar tetap layar penuh walau dibuka dari dalam jendela komentar.
+  return createPortal(
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[70] flex items-center justify-center bg-black/95" onClick={close}>
       <div className="max-h-full max-w-full p-4" onClick={(e) => e.stopPropagation()}>
         {current.type === 'video' ? (
           <VideoPlayer key={current.id} media={current} className="max-h-[85vh] max-w-full" />
@@ -133,6 +132,7 @@ export function Lightbox({ media, index, onChange }) {
           </span>
         </>
       )}
-    </div>
+    </div>,
+    document.body,
   )
 }

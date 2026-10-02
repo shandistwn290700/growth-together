@@ -1,10 +1,11 @@
 // Komponen tampilan khusus panel admin (gaya dashboard ala Gentelella).
 // Grafik dibuat dengan HTML/CSS biasa (tanpa library) agar ringan dan otomatis ikut warna tema.
-import { useEffect, useId, useState } from 'react'
+import { useId, useState } from 'react'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { IconBadge } from '../Icons.jsx'
 import { Badge } from '../ui.jsx'
 import { formatNumber } from '../../lib/format.js'
+import { useOverlay } from '../../lib/overlay.js'
 
 export function PageHeader({ title, description, actions }) {
   return (
@@ -224,15 +225,7 @@ export function AccountStatus({ account }) {
 
 export function Modal({ title, onClose, children }) {
   const titleId = useId()
-  useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && onClose()
-    document.addEventListener('keydown', onKey)
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = ''
-    }
-  }, [onClose])
+  useOverlay(onClose)
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby={titleId}>

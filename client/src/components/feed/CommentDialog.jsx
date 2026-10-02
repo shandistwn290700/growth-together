@@ -2,39 +2,57 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../../lib/api.js'
 import { useMe } from '../../lib/auth.js'
-import { timeAgo, fullDate } from '../../lib/format.js'
+import { authorName, timeAgo, fullDate } from '../../lib/format.js'
 import { updatePost } from '../../lib/feedCache.js'
+import { SendHorizontal } from 'lucide-react'
 import { Alert, Avatar, Select, Spinner } from '../ui.jsx'
+import GlassDialog from '../GlassDialog.jsx'
+import PostContent from './PostContent.jsx'
 
+// Di HP keyboard tidak langsung dibuka, agar postingan sempat terbaca dulu.
+const isWideScreen = () => window.matchMedia('(min-width: 640px)').matches
+
+// Jendela kaca berisi postingan & komentarnya, kolom komentar menempel di bawah (seperti Facebook).
 // Komentar dikelompokkan per siswa. Orang tua hanya melihat utas anaknya; guru/admin melihat semua utas.
-export default function CommentSection({ post }) {
+export default function CommentDialog({ post, onClose }) {
   const { data: me } = useMe()
   const comments = useQuery({
     queryKey: ['comments', post.id],
     queryFn: () => api.get(`/posts/${post.id}/comments`).then((r) => r.data),
   })
+  const inputId = `komentar-${post.id}`
+  const [autoFocus] = useState(isWideScreen)
 
-  if (comments.isPending) return <Spinner />
-  if (comments.isError) return <Alert>{getErrorMessage(comments.error)}</Alert>
-
-  const { students, threads } = comments.data
-  const multiThread = students.length > 1
+  const threads = comments.data?.threads ?? []
+  const multiThread = comments.data?.students.length > 1
 
   return (
-    <div className="space-y-4 border-t border-slate-100 px-4 py-3">
-      {threads.length === 0 && <p className="text-sm text-slate-500">Belum ada komentar.</p>}
-      {threads.map((thread) => (
-        <section key={thread.student.id} className="space-y-2">
-          {multiThread && (
-            <h4 className="text-xs font-bold tracking-wide text-brand-700 uppercase">Tentang {thread.student.fullName}</h4>
-          )}
-          {thread.comments.map((c) => (
-            <CommentItem key={c.id} comment={c} post={post} me={me} studentId={thread.student.id} />
-          ))}
-        </section>
-      ))}
-      <CommentForm post={post} students={students} />
-    </div>
+    <GlassDialog
+      title={`Postingan ${authorName(post.author)}`}
+      size="lg"
+      onClose={onClose}
+      footer={comments.isSuccess && <CommentForm post={post} students={comments.data.students} inputId={inputId} autoFocus={autoFocus} />}
+    >
+      <PostContent post={post} onComments={() => document.getElementById(inputId)?.focus()} />
+
+      <div className="space-y-4 border-t border-slate-900/[0.07] px-4 py-3">
+        {comments.isPending && <Spinner />}
+        {comments.isError && <Alert>{getErrorMessage(comments.error)}</Alert>}
+        {comments.isSuccess && threads.length === 0 && (
+          <p className="py-4 text-center text-sm text-slate-600">Belum ada komentar. Jadilah yang pertama memberi semangat!</p>
+        )}
+        {threads.map((thread) => (
+          <section key={thread.student.id} className="space-y-2">
+            {multiThread && (
+              <h4 className="text-xs font-bold tracking-wide text-brand-700 uppercase">Tentang {thread.student.fullName}</h4>
+            )}
+            {thread.comments.map((c) => (
+              <CommentItem key={c.id} comment={c} post={post} me={me} studentId={thread.student.id} />
+            ))}
+          </section>
+        ))}
+      </div>
+    </GlassDialog>
   )
 }
 
@@ -44,7 +62,7 @@ function CommentItem({ comment, post, me, studentId }) {
     <div>
       <CommentBubble comment={comment} post={post} me={me} onReply={() => setReplying(!replying)} />
       {(comment.replies.length > 0 || replying) && (
-        <div className="mt-2 ml-10 space-y-2 border-l-2 border-slate-100 pl-3">
+        <div className="mt-2 ml-10 space-y-2 border-l-2 border-slate-900/[0.07] pl-3">
           {comment.replies.map((reply) => (
             <CommentBubble key={reply.id} comment={reply} post={post} me={me} onReply={() => setReplying(true)} />
           ))}
@@ -64,7 +82,7 @@ function CommentItem({ comment, post, me, studentId }) {
   )
 }
 
-const authorLabel = (author) => (author.role === 'parent' ? `Ortu ${author.displayName}` : author.displayName)
+const commenterName = (author) => (author.role === 'parent' ? `Ortu ${author.displayName}` : author.displayName)
 
 function CommentBubble({ comment, post, me, onReply }) {
   const queryClient = useQueryClient()
@@ -82,16 +100,16 @@ function CommentBubble({ comment, post, me, onReply }) {
     <div className="flex gap-2">
       <Avatar name={comment.author.displayName} src={comment.author.avatarUrl} size="sm" />
       <div className="min-w-0">
-        <div className="rounded-2xl bg-slate-100 px-3 py-2">
+        <div className="rounded-2xl bg-white/80 px-3 py-2 shadow-sm ring-1 ring-slate-900/[0.04]">
           <div className="text-sm font-bold">
-            {authorLabel(comment.author)}
+            {commenterName(comment.author)}
             {comment.author.role !== 'parent' && (
               <span className="ml-1 text-xs font-semibold text-brand-700">{comment.author.role === 'admin' ? 'Admin' : 'Guru'}</span>
             )}
           </div>
           <p className="text-sm break-words whitespace-pre-line">{comment.content}</p>
         </div>
-        <div className="mt-0.5 flex gap-3 px-3 text-xs text-slate-500">
+        <div className="mt-0.5 flex gap-3 px-3 text-xs text-slate-600">
           <time dateTime={comment.createdAt} title={fullDate(comment.createdAt)}>
             {timeAgo(comment.createdAt)}
           </time>
@@ -113,7 +131,7 @@ function CommentBubble({ comment, post, me, onReply }) {
   )
 }
 
-function CommentForm({ post, students, fixedStudentId, parentId, placeholder, onDone, autoFocus }) {
+function CommentForm({ post, students, fixedStudentId, parentId, placeholder, onDone, autoFocus, inputId }) {
   const queryClient = useQueryClient()
   const { data: me } = useMe()
   const [content, setContent] = useState('')
@@ -158,22 +176,25 @@ function CommentForm({ post, students, fixedStudentId, parentId, placeholder, on
               </Select>
             </div>
           )}
-          {/* Kolom komentar dan tombol Kirim selalu satu baris, juga di HP */}
-          <div className="flex min-w-0 flex-1 items-center gap-1">
+          {/* Kolom komentar dan tombol kirim selalu satu baris, juga di HP */}
+          <div className="glass-field flex min-w-0 flex-1 items-center rounded-full pr-1 focus-within:ring-2 focus-within:ring-brand-200">
             <input
+              id={inputId}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder={placeholder ?? 'Tulis komentar…'}
+              aria-label={placeholder ?? 'Tulis komentar'}
               maxLength={2000}
               autoFocus={autoFocus}
-              className="min-w-0 flex-1 rounded-full bg-slate-100 px-4 py-2 text-base outline-none focus:ring-2 focus:ring-brand-100 sm:text-sm"
+              className="min-w-0 flex-1 bg-transparent py-2 pl-4 text-base outline-none placeholder:text-slate-500 sm:text-sm"
             />
             <button
               type="submit"
               disabled={!content.trim() || send.isPending || (needsPicker && !studentId)}
-              className="shrink-0 rounded-full px-3 py-2 text-sm font-bold text-brand-700 hover:bg-brand-50 disabled:text-slate-400"
+              className="flex size-8 shrink-0 items-center justify-center rounded-full text-brand-700 hover:bg-brand-50 disabled:text-slate-400 disabled:hover:bg-transparent"
+              aria-label="Kirim komentar"
             >
-              Kirim
+              <SendHorizontal className="size-[18px]" strokeWidth={2.2} />
             </button>
           </div>
         </div>

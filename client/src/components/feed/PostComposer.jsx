@@ -5,8 +5,9 @@ import { useMe } from '../../lib/auth.js'
 import { classLabel, useClassrooms } from '../../lib/queries.js'
 import { MAX_FILES, mediaTypeOf, uploadToCloudinary, validateFile } from '../../lib/upload.js'
 import { addNewPost } from '../../lib/feedCache.js'
-import { Camera, Image, Star, Tag, X } from 'lucide-react'
+import { Image, Star, Tag, X } from 'lucide-react'
 import { Alert, Avatar, Button, Card, Select } from '../ui.jsx'
+import GlassDialog from '../GlassDialog.jsx'
 
 let nextFileId = 1
 
@@ -42,10 +43,11 @@ export default function PostComposer() {
     )
   }
 
-  if (!open) {
-    const action =
-      'flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100'
-    return (
+  const action =
+    'flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100'
+  // Kotak ringkas tetap tampil di feed; formulir lengkap terbuka sebagai jendela kaca di atasnya.
+  return (
+    <>
       <Card padding="px-4 pt-3 pb-1">
         <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
           <Avatar name={me.displayName} src={me.avatarUrl} />
@@ -63,7 +65,10 @@ export default function PostComposer() {
             accept="image/*,video/*"
             multiple
             hidden
-            onChange={(e) => e.target.files.length && setOpen({ files: [...e.target.files] })}
+            onChange={(e) => {
+              if (e.target.files.length) setOpen({ files: [...e.target.files] })
+              e.target.value = ''
+            }}
           />
           <button onClick={() => quickPicker.current.click()} className={action}>
             <Image className="size-5 text-brand-600" strokeWidth={2.2} /> Foto/Video
@@ -78,14 +83,14 @@ export default function PostComposer() {
           </button>
         </div>
       </Card>
-    )
-  }
-
-  return <ComposerForm me={me} initialFiles={open.files} onClose={() => setOpen(false)} />
+      {open && <ComposerForm me={me} initialFiles={open.files} onClose={() => setOpen(false)} />}
+    </>
+  )
 }
 
 function ComposerForm({ me, initialFiles, onClose }) {
   const queryClient = useQueryClient()
+  const dialog = useRef(null)
   const fileInput = useRef(null)
   const isStaff = me.role !== 'parent'
   const [caption, setCaption] = useState('')
@@ -128,99 +133,115 @@ function ComposerForm({ me, initialFiles, onClose }) {
     },
     onSuccess: (post) => {
       addNewPost(queryClient, post)
-      onClose()
+      dialog.current.close()
     },
   })
 
   const uploadError = submit.error?.response?.data?.error?.message // error dari Cloudinary
   const canSubmit = (caption.trim() || files.length) && (!isStaff || target.studentIds.length > 0) && !submit.isPending
 
+  const dirty = caption.trim() !== '' || files.length > 0
+  const uploaded = files.filter((f) => f.progress >= 100).length
+
   return (
-    <Card className="space-y-3">
-      <div className="flex items-center gap-3">
-        <Avatar name={me.displayName} src={me.avatarUrl} />
-        <div className="font-bold">{me.displayName}</div>
-      </div>
-
-      <textarea
-        value={caption}
-        onChange={(e) => setCaption(e.target.value)}
-        rows={3}
-        maxLength={5000}
-        autoFocus
-        placeholder={isStaff ? 'Ceritakan kegiatan hari ini…' : 'Ceritakan perkembangan ananda…'}
-        className="w-full resize-y rounded-lg border border-slate-200 p-3 outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
-      />
-
-      {files.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {files.map((f) => (
-            <div key={f.id} className="relative aspect-square overflow-hidden rounded-lg bg-slate-100">
-              {f.type === 'image' ? (
-                <img src={f.previewUrl} alt="" className="size-full object-cover" />
-              ) : (
-                <video src={f.previewUrl} className="size-full object-cover" muted />
-              )}
-              {f.type === 'video' && (
-                <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 text-xs text-white">Video</span>
-              )}
-              {submit.isPending ? (
-                <div className="absolute inset-x-0 bottom-0 h-1.5 bg-black/20">
-                  <div className="h-full bg-brand-500 transition-all" style={{ width: `${f.progress}%` }} />
-                </div>
-              ) : (
-                <button
-                  onClick={() => removeFile(f.id)}
-                  className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
-                  aria-label="Hapus file"
-                >
-                  <X className="size-4" />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {fileError && <Alert variant="warning">{fileError}</Alert>}
-      {submit.isError && <Alert>{uploadError ? `Upload gagal: ${uploadError}` : getErrorMessage(submit.error)}</Alert>}
-
-      {isStaff && <TagPicker me={me} value={target} onChange={setTarget} disabled={submit.isPending} />}
-
-      <div className="flex items-center gap-2 border-t border-slate-100 pt-3">
-        <input
-          ref={fileInput}
-          type="file"
-          accept="image/*,video/*"
-          multiple
-          hidden
-          onChange={(e) => {
-            addFiles(e.target.files)
-            e.target.value = ''
-          }}
-        />
-        <Button
-          variant="secondary"
-          onClick={() => fileInput.current.click()}
-          disabled={files.length >= MAX_FILES || submit.isPending}
-          aria-label="Tambah foto atau video"
-          className="px-3"
-        >
-          <Camera className="size-[18px] text-brand-600" strokeWidth={2.2} /> <span className="hidden sm:inline">Foto/Video</span>
-          <span className="text-slate-500">
-            {files.length}/{MAX_FILES}
-          </span>
+    <GlassDialog
+      ref={dialog}
+      title="Buat postingan"
+      onClose={onClose}
+      locked={submit.isPending}
+      confirmClose={dirty ? 'Buang postingan ini? Tulisan dan foto yang dipilih akan hilang.' : null}
+      footer={
+        <Button onClick={() => submit.mutate()} disabled={!canSubmit} className="w-full py-2.5 text-base">
+          {submit.isPending ? (files.length ? `Mengunggah ${uploaded}/${files.length}…` : 'Memposting…') : 'Posting'}
         </Button>
-        <div className="ml-auto flex gap-2">
-          <Button variant="secondary" onClick={onClose} disabled={submit.isPending}>
-            Batal
-          </Button>
-          <Button onClick={() => submit.mutate()} disabled={!canSubmit}>
-            {submit.isPending ? 'Mengunggah…' : 'Posting'}
-          </Button>
+      }
+    >
+      <div className="space-y-3 p-4">
+        <div className="flex items-center gap-3">
+          <Avatar name={me.displayName} src={me.avatarUrl} />
+          <div className="leading-tight">
+            <div className="font-bold">{me.displayName}</div>
+            <div className="text-xs text-slate-600">
+              {isStaff ? 'Terlihat oleh orang tua siswa yang ditandai' : 'Terlihat oleh Anda dan guru ananda'}
+            </div>
+          </div>
+        </div>
+
+        <textarea
+          value={caption}
+          onChange={(e) => setCaption(e.target.value)}
+          rows={files.length ? 3 : 5}
+          maxLength={5000}
+          autoFocus
+          disabled={submit.isPending}
+          placeholder={isStaff ? 'Ceritakan kegiatan hari ini…' : 'Ceritakan perkembangan ananda…'}
+          aria-label="Isi postingan"
+          className={`w-full resize-none bg-transparent px-1 outline-none placeholder:text-slate-500 ${caption.length > 120 || files.length ? 'text-base' : 'text-xl'}`}
+        />
+
+        {files.length > 0 && (
+          <div className="glass-field grid grid-cols-3 gap-2 rounded-xl p-2 sm:grid-cols-4">
+            {files.map((f) => (
+              <div key={f.id} className="relative aspect-square overflow-hidden rounded-lg bg-slate-100">
+                {f.type === 'image' ? (
+                  <img src={f.previewUrl} alt="" className="size-full object-cover" />
+                ) : (
+                  <video src={f.previewUrl} className="size-full object-cover" muted />
+                )}
+                {f.type === 'video' && (
+                  <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 text-xs text-white">Video</span>
+                )}
+                {submit.isPending ? (
+                  <div className="absolute inset-x-0 bottom-0 h-1.5 bg-black/20">
+                    <div className="h-full bg-brand-500 transition-all" style={{ width: `${f.progress}%` }} />
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => removeFile(f.id)}
+                    className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                    aria-label="Hapus file"
+                  >
+                    <X className="size-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {fileError && <Alert variant="warning">{fileError}</Alert>}
+        {submit.isError && <Alert>{uploadError ? `Upload gagal: ${uploadError}` : getErrorMessage(submit.error)}</Alert>}
+
+        {isStaff && <TagPicker me={me} value={target} onChange={setTarget} disabled={submit.isPending} />}
+
+        {/* "Tambahkan ke postingan" seperti di Facebook */}
+        <div className="glass-field flex items-center gap-2 rounded-xl py-2 pr-2 pl-4">
+          <span className="text-sm font-semibold text-slate-700">Tambahkan ke postingan</span>
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            hidden
+            onChange={(e) => {
+              addFiles(e.target.files)
+              e.target.value = ''
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => fileInput.current.click()}
+            disabled={files.length >= MAX_FILES || submit.isPending}
+            className="ml-auto flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-slate-600 hover:bg-white/70 disabled:opacity-50"
+          >
+            <Image className="size-5 text-brand-600" strokeWidth={2.2} /> Foto/Video
+            <span className="text-slate-500">
+              {files.length}/{MAX_FILES}
+            </span>
+          </button>
         </div>
       </div>
-    </Card>
+    </GlassDialog>
   )
 }
 
@@ -249,7 +270,7 @@ function TagPicker({ me, value, onChange, disabled }) {
   }
 
   return (
-    <fieldset disabled={disabled} className="space-y-2 rounded-lg bg-slate-50 p-3">
+    <fieldset disabled={disabled} className="glass-field space-y-2 rounded-xl p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <legend className="text-sm font-bold">Tandai siswa</legend>
         <div className="w-48">
@@ -287,7 +308,7 @@ function TagPicker({ me, value, onChange, disabled }) {
                   className={`rounded-full border px-3 py-1 text-sm transition-colors ${
                     selected
                       ? 'border-brand-600 bg-brand-600 text-white'
-                      : 'border-slate-300 bg-white text-slate-700 hover:border-brand-600'
+                      : 'border-slate-300 bg-white/80 text-slate-700 hover:border-brand-600'
                   }`}
                 >
                   {s.nickname || s.fullName}
@@ -298,7 +319,7 @@ function TagPicker({ me, value, onChange, disabled }) {
         </>
       )}
       {detail.isSuccess && students.length === 0 && <p className="text-sm text-slate-500">Belum ada siswa aktif.</p>}
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-600">
         Postingan hanya terlihat oleh orang tua siswa yang ditandai. Setiap orang tua hanya melihat nama anaknya sendiri.
       </p>
     </fieldset>

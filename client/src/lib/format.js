@@ -37,3 +37,6 @@ export function showNickname(student) {
 export function initial(name) {
   return name?.trim()?.[0]?.toUpperCase() ?? '?'
 }
+
+// Nama penulis postingan: akun orang tua ditampilkan sebagai "Orang tua <nama anak>"
+export const authorName = (author) => (author.role === 'parent' ? `Orang tua ${author.displayName}` : author.displayName)
