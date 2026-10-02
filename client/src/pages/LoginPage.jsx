@@ -8,6 +8,7 @@ import { motionDelay } from '../lib/motion.js'
 import { SproutIcon } from '../components/Icons.jsx'
 import { Alert, Button, Field, Input } from '../components/ui.jsx'
 import AuthSplash from '../components/AuthSplash.jsx'
+import { useAppearance } from '../lib/useAppearance.js'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [form, setForm] = useState({ username: '', password: '' })
   const [welcome, setWelcome] = useState(null) // user yang baru login → tampilkan layar sambutan
   const [shake, setShake] = useState(false)
+  const schoolName = useAppearance().data?.schoolName
 
   const login = useMutation({
     mutationFn: async (body) => {
@@ -63,6 +65,11 @@ export default function LoginPage() {
           <p className="mt-1 animate-rise text-sm text-slate-600" style={{ animationDelay: '250ms' }}>
             Bersama mendampingi tumbuh kembang ananda
           </p>
+          {schoolName && (
+            <p className="mt-2 animate-rise text-sm font-bold text-brand-800" style={{ animationDelay: '300ms' }}>
+              {schoolName}
+            </p>
+          )}
         </div>
 
         <div className="animate-auth-in" style={{ animationDelay: '300ms' }}>

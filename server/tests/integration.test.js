@@ -567,6 +567,64 @@ const cli = (...args) =>
     r = await call('GET', '/admin/posts', { token: hasan.token });
     check('moderasi tertutup untuk guru -> 403', r.status === 403);
 
+    // ---- Laporan ZIP ----
+    console.log('\n--- Laporan ---');
+    const thisMonth = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 7); // bulan ini (WIB)
+    r = await call('GET', `/admin/reports/preview?type=month&month=${thisMonth}`, { token: siti.token });
+    check('laporan tertutup untuk guru -> 403', r.status === 403);
+    r = await call('GET', '/admin/reports/preview?type=month&month=2026-13', { token: admin });
+    check('bulan tidak valid -> 400', r.status === 400);
+    r = await call('GET', `/admin/reports/preview?type=month&month=${thisMonth}`, { token: admin });
+    check(
+      'pratinjau bulanan: postingan, foto (1 per postingan bersama), video',
+      r.status === 200 && r.data.totals.posts >= 14 && r.data.totals.photos === 2 && r.data.totals.videos === 1,
+      JSON.stringify(r.data),
+    );
+    check('pratinjau memakai kelas tahun ajaran yang mencakup bulan itu', r.data.academicYear === '2026/2027' && r.data.classes === 2, JSON.stringify(r.data));
+    const monthPosts = r.data.totals.posts;
+    r = await call('GET', `/admin/reports/preview?type=semester&academicYearId=${y1.id}&half=ganjil`, { token: admin });
+    check('semester ganjil 2026/2027 berisi postingan bulan ini', r.data.totals.posts === monthPosts && /Ganjil 2026\/2027/.test(r.data.label), JSON.stringify(r.data));
+    r = await call('GET', `/admin/reports/preview?type=semester&academicYearId=${y1.id}&half=genap`, { token: admin });
+    check('semester genap (Jan–Jun) masih kosong', r.data.totals.posts === 0);
+
+    r = await call('PUT', '/admin/settings/appearance', { token: admin, json: { schoolName: 'SDIT Bahtera Nuh' } });
+    check('admin mengisi nama sekolah, tema tidak berubah', r.data.schoolName === 'SDIT Bahtera Nuh' && r.data.theme === 'ungu', JSON.stringify(r.data));
+
+    r = await call('GET', `/admin/reports/download?type=month&month=${thisMonth}`, { token: admin });
+    const zip = r.data;
+    check('unduh ZIP laporan', r.status === 200 && Buffer.isBuffer(zip) && zip.subarray(0, 2).toString() === 'PK', `${r.status}`);
+    const zipText = zip.toString('latin1');
+    check(
+      'ZIP berisi Ringkasan.pdf, Rekap-aktivitas.xlsx, BACA-SAYA.txt',
+      ['Ringkasan.pdf', 'Rekap-aktivitas.xlsx', 'BACA-SAYA.txt'].every((name) => zipText.includes(name)),
+    );
+    // Cloudinary palsu di tes: foto gagal diunduh dan dicatat, bukan membuat laporan gagal.
+    check('foto yang gagal diunduh dicatat di foto-gagal-diunduh.txt', zipText.includes('foto-gagal-diunduh.txt'));
+
+    const { buildReport } = require(path.join(SERVER, 'services/reportData'));
+    const { parsePeriod } = require(path.join(SERVER, 'services/reportPeriod'));
+    const { buildReportPdf } = require(path.join(SERVER, 'helpers/reportPdf'));
+    const { buildReportExcel } = require(path.join(SERVER, 'helpers/reportExcel'));
+    const report = await buildReport(await parsePeriod({ type: 'month', month: thisMonth }));
+    check(
+      'lokasi foto: postingan bersama -> _Kegiatan kelas, satu siswa -> folder siswa',
+      report.photos.some((p) => p.path.startsWith('Foto/Kelas 1 Abu Bakar/_Kegiatan kelas/')) &&
+        report.photos.some((p) => p.path.startsWith('Foto/Kelas 2 Abu Bakar/Ahmad Fauzan/')),
+      JSON.stringify(report.photos.map((p) => p.path)),
+    );
+    const umarRow = report.classRows.find((c) => c.label === 'Kelas 6 Umar');
+    check('siswa tanpa momen terdeteksi (Umar)', umarRow?.withoutMoments.includes('Umar Faruq'), JSON.stringify(umarRow));
+    const pdf = await buildReportPdf(report, { schoolName: 'SDIT Bahtera Nuh', color: '#6d28d9' });
+    check('PDF ringkasan valid', pdf.subarray(0, 5).toString() === '%PDF-' && pdf.length > 2000, `${pdf.length} byte`);
+    const xlsxBook = new ExcelJS.Workbook();
+    await xlsxBook.xlsx.load(await buildReportExcel(report, 'SDIT Bahtera Nuh'));
+    check(
+      'Excel rekap berisi 5 sheet',
+      xlsxBook.worksheets.map((w) => w.name).join() === 'Ringkasan,Per kelas,Per siswa,Postingan,Video',
+      xlsxBook.worksheets.map((w) => w.name).join(),
+    );
+    check('sheet Per siswa berisi semua siswa tahun ajaran', xlsxBook.getWorksheet('Per siswa').rowCount === 1 + report.studentRows.length);
+
     // ================= TAHAP 5: CHAT E2EE =================
     console.log('\n--- Tahap 5 ---');
     const c = await import(require('url').pathToFileURL(path.join(SERVER, '..', 'client', 'src', 'lib', 'crypto.js')).href);

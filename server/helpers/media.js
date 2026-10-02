@@ -112,6 +112,14 @@ function photoUrl(publicId) {
   });
 }
 
+// Versi arsip untuk laporan ZIP: JPG, lebar maks 2000px (cukup tajam untuk dicetak, ukuran tetap wajar).
+function archiveImageUrl(publicId) {
+  return cloudinary.url(publicId, {
+    ...signedBase,
+    transformation: [{ crop: 'limit', width: 2000, quality: 'auto:good', fetch_format: 'jpg' }],
+  });
+}
+
 async function deleteFromCloudinary(mediaList) {
   for (const resourceType of RESOURCE_TYPES) {
     const ids = mediaList.filter((m) => m.type === resourceType).map((m) => m.publicId);
@@ -126,6 +134,7 @@ module.exports = {
   createUploadSignature,
   validateUploadedMedia,
   deliveryUrls,
+  archiveImageUrl,
   photoUrl,
   deleteFromCloudinary,
 };

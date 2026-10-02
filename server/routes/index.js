@@ -16,6 +16,7 @@ const StudentController = require('../controllers/studentController');
 const ChatController = require('../controllers/chatController');
 const SettingsController = require('../controllers/settingsController');
 const AdminController = require('../controllers/adminController');
+const ReportController = require('../controllers/reportController');
 
 const router = express.Router();
 
@@ -110,6 +111,8 @@ router.put('/admin/settings/appearance', authorize('admin'), SettingsController.
 router.get('/admin/stats', authorize('admin'), AdminController.stats);
 router.get('/admin/students', authorize('admin'), AdminController.students);
 router.get('/admin/posts', authorize('admin'), AdminController.posts);
+router.get('/admin/reports/preview', authorize('admin'), ReportController.preview);
+router.get('/admin/reports/download', authorize('admin'), ReportController.download);
 router.get('/admin/teachers', authorize('admin'), UserController.listTeachers);
 router.post('/admin/users/:id/reset-password', authorize('admin'), UserController.resetPassword);
 router.patch('/admin/users/:id/status', authorize('admin'), UserController.setActive);

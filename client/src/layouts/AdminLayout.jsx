@@ -2,6 +2,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 import {
   CalendarRange,
+  FileArchive,
   FileSpreadsheet,
   GraduationCap,
   LayoutDashboard,
@@ -38,6 +39,7 @@ const MENU = [
     title: 'Konten & tampilan',
     items: [
       { to: '/admin/moderasi', label: 'Moderasi Postingan', icon: ShieldCheck },
+      { to: '/admin/laporan', label: 'Laporan', icon: FileArchive },
       { to: '/admin/tema', label: 'Tema Warna', icon: Palette },
     ],
   },

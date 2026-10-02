@@ -20,6 +20,7 @@ const DashboardPage = lazy(() => import('./pages/admin/DashboardPage.jsx'))
 const StudentsPage = lazy(() => import('./pages/admin/StudentsPage.jsx'))
 const TeachersPage = lazy(() => import('./pages/admin/TeachersPage.jsx'))
 const ModerationPage = lazy(() => import('./pages/admin/ModerationPage.jsx'))
+const ReportsPage = lazy(() => import('./pages/admin/ReportsPage.jsx'))
 const settings = () => import('./pages/admin/SettingsPages.jsx')
 const AcademicYearsPage = lazy(() => settings().then((m) => ({ default: m.AcademicYearsPage })))
 const ImportPage = lazy(() => settings().then((m) => ({ default: m.ImportPage })))
@@ -59,6 +60,7 @@ export default function App() {
               <Route path="tahun-ajaran" element={<AcademicYearsPage />} />
               <Route path="import" element={<ImportPage />} />
               <Route path="moderasi" element={<ModerationPage />} />
+              <Route path="laporan" element={<ReportsPage />} />
               <Route path="tema" element={<ThemePage />} />
             </Route>
           </Route>
