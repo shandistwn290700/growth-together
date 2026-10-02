@@ -4,6 +4,8 @@
 // - Guru melihat postingan yang menandai siswa di kelasnya (sekarang), atau yang dibuat
 //   saat siswa itu berada di kelas yang pernah ia ampu.
 // - Daftar tag dan utas komentar ikut disaring: orang tua tidak pernah melihat nama siswa lain.
+// - Pengumuman admin (kelas tertentu / seluruh sekolah) menandai semua siswa aktif di sasarannya
+//   saat diposting, jadi aturan di atas tetap berlaku. Pengumuman tidak masuk timeline siswa.
 const { Op } = require('sequelize');
 const { AcademicYear, Classroom, ClassroomTeacher, Enrollment, Student, sequelize } = require('../models');
 
@@ -65,6 +67,7 @@ async function canViewStudent(user, studentId, scope) {
  * SQL (subquery) berisi ID postingan di timeline seorang siswa yang boleh dilihat user.
  * Yang dihitung adalah tag siswa itu sendiri: guru hanya melihat momen siswa saat berada
  * di kelas yang ia ampu (atau siswa yang sekarang di kelasnya), ditambah postingannya sendiri.
+ * Pengumuman admin bukan momen siswa, jadi tidak ikut.
  */
 function timelinePostIdsSql(user, scope, studentId, classroomId) {
   const sid = Number(studentId);
@@ -73,9 +76,10 @@ function timelinePostIdsSql(user, scope, studentId, classroomId) {
     throw { name: 'BadRequest', message: 'Parameter tidak valid' };
   }
 
-  const base = [`ps."studentId" = ${sid}`];
+  const base = [`ps."studentId" = ${sid}`, `p."audience" = 'tagged'`];
   if (cid) base.push(`ps."classroomId" = ${cid}`);
-  if (scope.all) return `SELECT ps."postId" FROM "PostStudents" ps WHERE ${base.join(' AND ')}`;
+  const from = 'FROM "PostStudents" ps JOIN "Posts" p ON p.id = ps."postId"';
+  if (scope.all) return `SELECT ps."postId" ${from} WHERE ${base.join(' AND ')}`;
 
   const ids = (set) => [...set].map(Number).join(',');
   const access = [];
@@ -83,8 +87,7 @@ function timelinePostIdsSql(user, scope, studentId, classroomId) {
   if (scope.classroomIds.size) access.push(`ps."classroomId" IN (${ids(scope.classroomIds)})`);
   access.push(`p."authorId" = ${Number(user.id)}`);
 
-  return `SELECT ps."postId" FROM "PostStudents" ps JOIN "Posts" p ON p.id = ps."postId"
-    WHERE ${base.join(' AND ')} AND (${access.join(' OR ')})`;
+  return `SELECT ps."postId" ${from} WHERE ${base.join(' AND ')} AND (${access.join(' OR ')})`;
 }
 
 // Siswa yang tampil di sebuah postingan menurut sudut pandang user.
@@ -106,12 +109,49 @@ function parentCanPost(student) {
   return student?.status === 'active';
 }
 
+const AUDIENCES = ['tagged', 'classes', 'school'];
+
+// Pengumuman admin: tandai semua siswa aktif di kelas yang dipilih, atau di seluruh sekolah.
+async function resolveAnnouncementTags(year, audience, classroomIds) {
+  let classIds = null;
+  if (audience === 'classes') {
+    if (!Array.isArray(classroomIds) || classroomIds.length === 0) {
+      throw { name: 'BadRequest', message: 'Pilih minimal satu kelas' };
+    }
+    classIds = [...new Set(classroomIds.map(Number))];
+    const found = classIds.every(Number.isInteger)
+      ? await Classroom.count({ where: { id: classIds, academicYearId: year.id } })
+      : 0;
+    if (found !== classIds.length) throw { name: 'BadRequest', message: 'Ada kelas yang tidak ada di tahun ajaran aktif' };
+  }
+
+  const enrollments = await Enrollment.findAll({
+    where: { academicYearId: year.id, status: 'active', ...(classIds && { classroomId: classIds }) },
+    include: { model: Student, where: { status: 'active' }, attributes: [] },
+    attributes: ['studentId', 'classroomId'],
+  });
+  if (enrollments.length === 0) {
+    throw { name: 'BadRequest', message: 'Belum ada siswa aktif di kelas yang dipilih' };
+  }
+
+  return {
+    audience,
+    tags: enrollments.map((e) => ({ studentId: e.studentId, classroomId: e.classroomId })),
+    classroomId: classIds?.length === 1 ? classIds[0] : null,
+  };
+}
+
 /**
  * Tentukan siswa yang ditandai dan kelasnya masing-masing.
- * Hasil: { tags: [{ studentId, classroomId }], classroomId } — classroomId diisi jika semua dari satu kelas.
+ * Hasil: { audience, tags: [{ studentId, classroomId }], classroomId } — classroomId diisi jika semua dari satu kelas.
  */
-async function resolvePostTags(user, { classroomId, studentIds }) {
+async function resolvePostTags(user, { classroomId, studentIds, audience = 'tagged', classroomIds }) {
+  if (!AUDIENCES.includes(audience)) throw { name: 'BadRequest', message: 'Sasaran postingan tidak dikenal' };
+  if (audience !== 'tagged' && user.role !== 'admin') {
+    throw { name: 'Forbidden', message: 'Hanya admin yang bisa membuat pengumuman untuk kelas atau seluruh sekolah' };
+  }
   const year = await getActiveYear();
+  if (audience !== 'tagged') return resolveAnnouncementTags(year, audience, classroomIds);
 
   if (user.role === 'parent') {
     if (!parentCanPost(user.student)) {
@@ -142,10 +182,11 @@ async function resolvePostTags(user, { classroomId, studentIds }) {
     }
   }
 
-  const classroomIds = new Set(enrollments.map((e) => e.classroomId));
+  const enrolledClassIds = new Set(enrollments.map((e) => e.classroomId));
   return {
+    audience,
     tags: enrollments.map((e) => ({ studentId: e.studentId, classroomId: e.classroomId })),
-    classroomId: classroomIds.size === 1 ? [...classroomIds][0] : null,
+    classroomId: enrolledClassIds.size === 1 ? [...enrolledClassIds][0] : null,
   };
 }
 

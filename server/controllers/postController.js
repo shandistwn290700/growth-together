@@ -50,18 +50,20 @@ class PostController {
   }
 
   // POST /posts  body: { caption, classroomId?, studentIds?, media: [...] }
+  // Pengumuman admin: { audience: 'classes', classroomIds: [...] } atau { audience: 'school' }.
   static async create(req, res) {
-    const { caption = '', classroomId, studentIds, media = [] } = req.body ?? {};
+    const { caption = '', classroomId, studentIds, audience, classroomIds, media = [] } = req.body ?? {};
     const text = String(caption).trim();
     const mediaRows = validateUploadedMedia(req.user.id, media);
     if (!text && mediaRows.length === 0) {
       throw { name: 'BadRequest', message: 'Tulis sesuatu atau tambahkan foto/video' };
     }
-    const { tags, classroomId: postClassroomId } = await resolvePostTags(req.user, { classroomId, studentIds });
+    const resolved = await resolvePostTags(req.user, { classroomId, studentIds, audience, classroomIds });
+    const { tags, classroomId: postClassroomId } = resolved;
 
     const created = await sequelize.transaction(async (transaction) => {
       const post = await Post.create(
-        { authorId: req.user.id, classroomId: postClassroomId, caption: text || null },
+        { authorId: req.user.id, classroomId: postClassroomId, audience: resolved.audience, caption: text || null },
         { transaction },
       );
       await PostMedia.bulkCreate(

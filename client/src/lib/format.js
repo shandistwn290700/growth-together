@@ -40,3 +40,11 @@ export function initial(name) {
 
 // Nama penulis postingan: akun orang tua ditampilkan sebagai "Orang tua <nama anak>"
 export const authorName = (author) => (author.role === 'parent' ? `Orang tua ${author.displayName}` : author.displayName)
+
+// Sasaran pengumuman admin: "Seluruh sekolah", "Kelas 1 Abu Bakar", atau "4 kelas"
+export function audienceLabel(audience) {
+  if (!audience) return null
+  if (audience.type === 'school') return 'Seluruh sekolah'
+  const labels = audience.classes.map((c) => c.label)
+  return labels.length <= 2 ? labels.join(' & ') : `${labels.length} kelas`
+}

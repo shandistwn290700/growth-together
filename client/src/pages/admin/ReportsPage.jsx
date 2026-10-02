@@ -19,7 +19,7 @@ const currentHalf = () => (new Date().getMonth() >= 6 ? 'ganjil' : 'genap')
 const ARCHIVE_CONTENTS = [
   [FileText, 'Ringkasan.pdf', 'Angka utama, grafik & rekap per kelas, siswa yang belum memiliki momen.'],
   [FileSpreadsheet, 'Rekap-aktivitas.xlsx', 'Sheet Ringkasan, Per kelas, Per siswa, Postingan, dan Video (dengan tautan).'],
-  [Images, 'Foto/', 'Dikelompokkan per kelas; foto bersama di folder "_Kegiatan kelas".'],
+  [Images, 'Foto/', 'Dikelompokkan per kelas; foto bersama di "_Kegiatan kelas", foto pengumuman di "_Pengumuman".'],
 ]
 
 function SchoolNameForm({ className }) {

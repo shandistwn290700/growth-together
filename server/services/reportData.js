@@ -100,12 +100,23 @@ async function buildReport(period) {
     const clips = post.media.filter((m) => m.type === 'video');
     const day = dateKey(post.createdAt);
     const classLabels = [...new Map(tags.map((t) => [t.Classroom.id, t.Classroom.label])).values()];
-    const tagged = tags.length <= 5 ? tags.map((t) => t.Student.fullName).join(', ') : `${tags.length} siswa`;
+    const announcement = post.audience !== 'tagged';
+    const tagged = announcement
+      ? `Pengumuman: ${post.audience === 'school' ? 'seluruh sekolah' : classLabels.join(', ')}`
+      : tags.length <= 5
+        ? tags.map((t) => t.Student.fullName).join(', ')
+        : `${tags.length} siswa`;
 
     // Lokasi foto di ZIP: folder siswa jika hanya menandai satu siswa di kelas itu,
     // selain itu folder "_Kegiatan kelas" (tidak disalin ke setiap siswa agar ZIP tidak membengkak).
+    // Foto pengumuman admin disimpan sekali saja di "Foto/_Pengumuman".
     const byClass = new Map();
-    tags.forEach((t) => byClass.set(t.Classroom.id, [...(byClass.get(t.Classroom.id) ?? []), t]));
+    if (!announcement) tags.forEach((t) => byClass.set(t.Classroom.id, [...(byClass.get(t.Classroom.id) ?? []), t]));
+    if (announcement) {
+      images.forEach((m, i) =>
+        photos.push({ url: archiveImageUrl(m.publicId), path: `Foto/_Pengumuman/${day}_post${post.id}_${i + 1}.jpg` }),
+      );
+    }
     for (const classTags of byClass.values()) {
       const folder = `Foto/${safeName(classTags[0].Classroom.label)}/${
         classTags.length === 1 ? safeName(classTags[0].Student.fullName) : '_Kegiatan kelas'
@@ -139,13 +150,17 @@ async function buildReport(period) {
       videos: clips.length,
       reactions: reactionsByPost.get(post.id) ?? 0,
       comments: commentsByPost.get(post.id) ?? 0,
+      announcement,
       tags,
     };
   });
 
+  // Pengumuman admin bukan momen siswa/kelas: hanya dihitung di angka total.
+  const momentRows = postRows.filter((p) => !p.announcement);
+
   // ---------- Per siswa ----------
   const studentRows = enrollments.map((e) => {
-    const mine = postRows.filter((p) => p.tags.some((t) => t.studentId === e.studentId));
+    const mine = momentRows.filter((p) => p.tags.some((t) => t.studentId === e.studentId));
     const parent = e.Student.parentAccount;
     return {
       studentId: e.studentId,
@@ -165,7 +180,7 @@ async function buildReport(period) {
 
   // ---------- Per kelas ----------
   const classRows = classrooms.map((c) => {
-    const classPosts = postRows.filter((p) => p.tags.some((t) => t.classroomId === c.id));
+    const classPosts = momentRows.filter((p) => p.tags.some((t) => t.classroomId === c.id));
     const students = studentRows.filter((s) => s.classroomId === c.id);
     return {
       id: c.id,
@@ -187,6 +202,7 @@ async function buildReport(period) {
     postsByTeacher: postRows.filter((p) => p.role === 'teacher').length,
     postsByParent: postRows.filter((p) => p.role === 'parent').length,
     postsByAdmin: postRows.filter((p) => p.role === 'admin').length,
+    announcements: postRows.filter((p) => p.announcement).length,
     photos: postRows.reduce((sum, p) => sum + p.photos, 0),
     videos: postRows.reduce((sum, p) => sum + p.videos, 0),
     comments: postRows.reduce((sum, p) => sum + p.comments, 0),

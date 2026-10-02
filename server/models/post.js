@@ -18,6 +18,13 @@ module.exports = (sequelize, DataTypes) => {
     {
       authorId: { type: DataTypes.INTEGER, allowNull: false },
       classroomId: DataTypes.INTEGER,
+      // 'tagged' = momen siswa yang ditandai; 'classes' / 'school' = pengumuman admin.
+      audience: {
+        type: DataTypes.STRING(10),
+        allowNull: false,
+        defaultValue: 'tagged',
+        validate: { isIn: { args: [['tagged', 'classes', 'school']], msg: 'Sasaran postingan tidak dikenal' } },
+      },
       caption: {
         type: DataTypes.TEXT,
         validate: { len: { args: [0, 5000], msg: 'Caption maksimal 5000 karakter' } },

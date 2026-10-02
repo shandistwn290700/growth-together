@@ -625,6 +625,84 @@ const cli = (...args) =>
     );
     check('sheet Per siswa berisi semua siswa tahun ajaran', xlsxBook.getWorksheet('Per siswa').rowCount === 1 + report.studentRows.length);
 
+    // ---------- Pengumuman admin (kelas tertentu / seluruh sekolah) ----------
+    // Tahun ajaran aktif 2027/2028: Ahmad di Kelas 2 Abu Bakar (guru Siti & Hasan), Aisyah di Kelas 1 Abu Bakar.
+    console.log('\n--- Pengumuman ---');
+    const adminId = (await call('GET', '/auth/me', { token: admin })).data.id;
+    r = await call('POST', '/posts', { token: siti.token, json: { caption: 'Info', audience: 'school' } });
+    check('guru tidak bisa membuat pengumuman sekolah -> 403', r.status === 403, JSON.stringify(r.data));
+    r = await call('POST', '/posts', { token: ahmadOrtu.token, json: { caption: 'Info', audience: 'classes', classroomIds: [next2.id] } });
+    check('ortu tidak bisa membuat pengumuman kelas -> 403', r.status === 403);
+    r = await call('POST', '/posts', { token: admin, json: { caption: 'Info', audience: 'semua' } });
+    check('sasaran tidak dikenal -> 400', r.status === 400);
+    r = await call('POST', '/posts', { token: admin, json: { caption: 'Info', audience: 'classes', classroomIds: [] } });
+    check('pengumuman kelas tanpa kelas -> 400', r.status === 400 && /minimal satu kelas/.test(r.data.message), JSON.stringify(r.data));
+    r = await call('POST', '/posts', { token: admin, json: { caption: 'Info', audience: 'classes', classroomIds: [class1.id] } });
+    check('kelas dari tahun ajaran lain -> 400', r.status === 400, JSON.stringify(r.data));
+
+    r = await call('POST', '/posts', { token: admin, json: { caption: 'Pengumuman kelas 1: bawa buku iqra', audience: 'classes', classroomIds: [next1.id] } });
+    const annClass = r.data;
+    check(
+      'admin mengumumkan ke Kelas 1 Abu Bakar',
+      r.status === 201 && annClass.audience?.type === 'classes' && annClass.audience.classes.map((c) => c.label).join() === 'Kelas 1 Abu Bakar' && annClass.students.length === 0,
+      JSON.stringify(r.data),
+    );
+    r = await call('POST', '/posts', {
+      token: admin,
+      json: { caption: 'Libur awal Ramadhan 3 hari', audience: 'school', media: [fakeMedia(adminId)] },
+    });
+    const annSchool = r.data;
+    check(
+      'admin mengumumkan ke seluruh sekolah (semua siswa aktif ditandai)',
+      r.status === 201 && annSchool.audience?.type === 'school' && annSchool.totalTagged === 2 && annSchool.audience.classes.length === 2,
+      JSON.stringify(r.data),
+    );
+
+    const feedCaptions = async (token) => (await call('GET', '/posts', { token })).data.items.map((p) => p.caption);
+    let captions = await feedCaptions(aisyahOrtu.token);
+    check('ortu Aisyah melihat pengumuman kelasnya & sekolah', captions.includes(annClass.caption) && captions.includes(annSchool.caption), JSON.stringify(captions));
+    captions = await feedCaptions(ahmadOrtu.token);
+    check('ortu Ahmad tidak melihat pengumuman kelas lain, tapi melihat pengumuman sekolah', !captions.includes(annClass.caption) && captions.includes(annSchool.caption), JSON.stringify(captions));
+    r = await call('GET', `/posts/${annSchool.id}`, { token: ahmadOrtu.token });
+    check(
+      'ortu hanya melihat kelas anaknya di sasaran & tanpa daftar siswa',
+      r.data.audience.classes.map((c) => c.label).join() === 'Kelas 2 Abu Bakar' && r.data.students.length === 0 && r.data.totalTagged === undefined,
+      JSON.stringify(r.data.audience),
+    );
+    captions = await feedCaptions(siti.token);
+    check('guru Kelas 2 melihat pengumuman sekolah, tidak melihat pengumuman Kelas 1', captions.includes(annSchool.caption) && !captions.includes(annClass.caption), JSON.stringify(captions));
+    r = await call('GET', `/posts/${annClass.id}`, { token: ahmadOrtu.token });
+    check('ortu kelas lain membuka pengumuman kelas -> 404', r.status === 404);
+
+    r = await call('GET', `/students/${ahmad.id}/posts`, { token: ahmadOrtu.token });
+    check('pengumuman tidak masuk timeline siswa', r.data.items.every((p) => !p.audience), JSON.stringify(r.data.items.map((p) => p.caption)));
+    r = await call('GET', `/students/${ahmad.id}/media`, { token: admin });
+    check('foto pengumuman tidak masuk galeri siswa', r.status === 200 && !JSON.stringify(r.data).includes('Libur awal'));
+
+    // Komentar ortu pada pengumuman: tetap per utas anaknya, tidak terlihat ortu lain.
+    r = await call('POST', `/posts/${annSchool.id}/comments`, { token: ahmadOrtu.token, json: { content: 'Baik, terima kasih infonya' } });
+    check('ortu berkomentar di pengumuman', r.status === 201, JSON.stringify(r.data));
+    r = await call('GET', `/posts/${annSchool.id}/comments`, { token: aisyahOrtu.token });
+    check('ortu lain tidak melihat komentar tsb', r.status === 200 && r.data.threads.length === 0, JSON.stringify(r.data));
+    r = await call('GET', `/posts/${annSchool.id}/comments`, { token: admin });
+    check('admin melihat komentar ortu di pengumuman', r.data.threads.length === 1);
+
+    const reportAfter = await buildReport(await parsePeriod({ type: 'month', month: thisMonth }));
+    check(
+      'laporan: pengumuman dihitung terpisah & tidak menambah momen siswa/kelas',
+      reportAfter.totals.announcements === 2 &&
+        reportAfter.totals.posts === report.totals.posts + 2 &&
+        reportAfter.totals.studentsWithMoments === report.totals.studentsWithMoments &&
+        reportAfter.classRows.every((c, i) => c.posts === report.classRows[i].posts),
+      JSON.stringify(reportAfter.totals),
+    );
+    check(
+      'laporan: foto pengumuman di Foto/_Pengumuman (sekali saja) & kolom sasaran',
+      reportAfter.photos.filter((p) => p.path.startsWith('Foto/_Pengumuman/')).length === 1 &&
+        reportAfter.postRows.some((p) => p.tagged === 'Pengumuman: seluruh sekolah'),
+      JSON.stringify(reportAfter.photos.map((p) => p.path)),
+    );
+
     // ================= TAHAP 5: CHAT E2EE =================
     console.log('\n--- Tahap 5 ---');
     const c = await import(require('url').pathToFileURL(path.join(SERVER, '..', 'client', 'src', 'lib', 'crypto.js')).href);

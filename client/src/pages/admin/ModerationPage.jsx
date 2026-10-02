@@ -4,7 +4,7 @@ import { Eye, Heart, Image as ImageIcon, MessageCircle, Play, Search, Trash2 } f
 import api, { getErrorMessage } from '../../lib/api.js'
 import { classLabel, useClassrooms } from '../../lib/queries.js'
 import { removePost } from '../../lib/feedCache.js'
-import { formatNumber } from '../../lib/format.js'
+import { formatNumber, audienceLabel } from '../../lib/format.js'
 import { Alert, Button, Select, Spinner } from '../../components/ui.jsx'
 import { Modal, PageHeader, Panel } from '../../components/admin/AdminUI.jsx'
 import PostCard from '../../components/feed/PostCard.jsx'
@@ -116,7 +116,7 @@ export default function ModerationPage() {
                       <b className="font-semibold text-slate-700">{post.author.role === 'parent' ? `Ortu ${post.author.displayName}` : post.author.displayName}</b>{' '}
                       · {ROLE[post.author.role]}
                     </span>
-                    <span>{post.classroom?.label ?? `${post.totalTagged} siswa ditandai`}</span>
+                    <span>{post.audience ? `Pengumuman: ${audienceLabel(post.audience)}` : (post.classroom?.label ?? `${post.totalTagged} siswa ditandai`)}</span>
                     <span>{fullDate(post.createdAt)}</span>
                     <span className="flex items-center gap-1" title="Reaksi">
                       <Heart className="size-3.5" /> {formatNumber(post.reactions.total)}

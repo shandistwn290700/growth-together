@@ -3,9 +3,9 @@ import { Link } from 'react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api, { getErrorMessage } from '../../lib/api.js'
 import { useMe } from '../../lib/auth.js'
-import { authorName, fullDate, timeAgo } from '../../lib/format.js'
+import { audienceLabel, authorName, fullDate, timeAgo } from '../../lib/format.js'
 import { removePost } from '../../lib/feedCache.js'
-import { Ellipsis, MessageCircle } from 'lucide-react'
+import { Ellipsis, Megaphone, MessageCircle } from 'lucide-react'
 import { Avatar } from '../ui.jsx'
 import MediaGrid from './MediaGrid.jsx'
 import { ReactionButton, ReactionSummary } from './Reactions.jsx'
@@ -41,6 +41,15 @@ export default function PostContent({ post, onComments, onEdit }) {
 
   return (
     <>
+      {post.audience && (
+        <div
+          className="flex items-center gap-2 border-b border-brand-100 bg-brand-50 px-4 py-2 text-xs font-bold text-brand-800"
+          title={post.audience.classes.map((c) => c.label).join(', ')}
+        >
+          <Megaphone className="size-4 shrink-0" strokeWidth={2.2} />
+          <span className="truncate">Pengumuman · {audienceLabel(post.audience)}</span>
+        </div>
+      )}
       <header className="flex items-start gap-3 px-4 pt-4">
         <Avatar name={post.author.displayName} src={post.author.avatarUrl} />
         <div className="min-w-0 flex-1 leading-snug">
@@ -57,7 +66,7 @@ export default function PostContent({ post, onComments, onEdit }) {
             <time dateTime={post.createdAt} title={fullDate(post.createdAt)}>
               {timeAgo(post.createdAt)}
             </time>
-            {post.classroom && ` · ${post.classroom.label}`}
+            {post.classroom && !post.audience && ` · ${post.classroom.label}`}
             {post.updatedAt !== post.createdAt && ' · diedit'}
           </p>
         </div>

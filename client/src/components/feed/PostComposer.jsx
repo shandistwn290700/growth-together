@@ -5,11 +5,30 @@ import { useMe } from '../../lib/auth.js'
 import { classLabel, useClassrooms } from '../../lib/queries.js'
 import { MAX_FILES, mediaTypeOf, uploadToCloudinary, validateFile } from '../../lib/upload.js'
 import { addNewPost } from '../../lib/feedCache.js'
-import { Image, Star, Tag, X } from 'lucide-react'
+import { Image, School, Star, Tag, Users, X } from 'lucide-react'
 import { Alert, Avatar, Button, Card, Select } from '../ui.jsx'
 import GlassDialog from '../GlassDialog.jsx'
 
 let nextFileId = 1
+
+// Data sasaran yang dikirim ke server sesuai pilihan di formulir.
+function targetPayload(target) {
+  if (target.audience === 'school') return { audience: 'school' }
+  if (target.audience === 'classes') return { audience: 'classes', classroomIds: target.classroomIds }
+  return { classroomId: target.classroomId, studentIds: target.studentIds }
+}
+
+function targetReady(target) {
+  if (target.audience === 'school') return true
+  if (target.audience === 'classes') return target.classroomIds.length > 0
+  return target.studentIds.length > 0
+}
+
+const VISIBILITY = {
+  tagged: 'Terlihat oleh orang tua siswa yang ditandai',
+  classes: 'Pengumuman · terlihat oleh orang tua & guru di kelas yang dipilih',
+  school: 'Pengumuman · terlihat oleh semua orang tua & guru',
+}
 
 // Tambahkan file pilihan ke daftar: buang yang tidak valid/terlalu besar dan batasi jumlahnya.
 function withNewFiles(existing, list) {
@@ -98,7 +117,14 @@ function ComposerForm({ me, initialFiles, onClose }) {
   const [initial] = useState(() => withNewFiles([], initialFiles ?? []))
   const [files, setFiles] = useState(initial.files)
   const [fileError, setFileError] = useState(initial.error)
-  const [target, setTarget] = useState({ classroomId: null, studentIds: [] })
+  // Admin bisa memilih sasaran; awalnya "Kelas tertentu" tanpa kelas terpilih, agar pengumuman
+  // tidak terkirim ke seluruh sekolah karena lupa memilih.
+  const [target, setTarget] = useState({
+    audience: me.role === 'admin' ? 'classes' : 'tagged',
+    classroomId: null,
+    studentIds: [],
+    classroomIds: [],
+  })
 
   // Bersihkan URL pratinjau saat komponen ditutup.
   const filesRef = useRef(files)
@@ -128,7 +154,7 @@ function ComposerForm({ me, initialFiles, onClose }) {
       for (const item of files) {
         media.push(await uploadToCloudinary(item.file, (p) => setProgress(item.id, p)))
       }
-      const { data } = await api.post('/posts', { caption, media, ...target })
+      const { data } = await api.post('/posts', { caption, media, ...targetPayload(target) })
       return data
     },
     onSuccess: (post) => {
@@ -138,7 +164,7 @@ function ComposerForm({ me, initialFiles, onClose }) {
   })
 
   const uploadError = submit.error?.response?.data?.error?.message // error dari Cloudinary
-  const canSubmit = (caption.trim() || files.length) && (!isStaff || target.studentIds.length > 0) && !submit.isPending
+  const canSubmit = (caption.trim() || files.length) && (!isStaff || targetReady(target)) && !submit.isPending
 
   const dirty = caption.trim() !== '' || files.length > 0
   const uploaded = files.filter((f) => f.progress >= 100).length
@@ -162,7 +188,7 @@ function ComposerForm({ me, initialFiles, onClose }) {
           <div className="leading-tight">
             <div className="font-bold">{me.displayName}</div>
             <div className="text-xs text-slate-600">
-              {isStaff ? 'Terlihat oleh orang tua siswa yang ditandai' : 'Terlihat oleh Anda dan guru ananda'}
+              {isStaff ? VISIBILITY[target.audience] : 'Terlihat oleh Anda dan guru ananda'}
             </div>
           </div>
         </div>
@@ -212,7 +238,10 @@ function ComposerForm({ me, initialFiles, onClose }) {
         {fileError && <Alert variant="warning">{fileError}</Alert>}
         {submit.isError && <Alert>{uploadError ? `Upload gagal: ${uploadError}` : getErrorMessage(submit.error)}</Alert>}
 
-        {isStaff && <TagPicker me={me} value={target} onChange={setTarget} disabled={submit.isPending} />}
+        {me.role === 'admin' && <AudiencePicker me={me} value={target} onChange={setTarget} disabled={submit.isPending} />}
+        {me.role === 'teacher' && (
+          <TagPicker me={me} value={target} onChange={(t) => setTarget({ ...target, ...t })} disabled={submit.isPending} />
+        )}
 
         {/* "Tambahkan ke postingan" seperti di Facebook */}
         <div className="glass-field flex items-center gap-2 rounded-xl py-2 pr-2 pl-4">
@@ -242,6 +271,105 @@ function ComposerForm({ me, initialFiles, onClose }) {
         </div>
       </div>
     </GlassDialog>
+  )
+}
+
+const AUDIENCE_OPTIONS = [
+  { value: 'classes', label: 'Kelas tertentu', icon: Users },
+  { value: 'school', label: 'Seluruh sekolah', icon: School },
+  { value: 'tagged', label: 'Tandai siswa', icon: Tag },
+]
+
+// Admin: pengumuman untuk kelas tertentu / seluruh sekolah, atau momen dengan menandai siswa.
+function AudiencePicker({ me, value, onChange, disabled }) {
+  const classrooms = useClassrooms()
+  const list = classrooms.data ?? []
+  const totalStudents = list.reduce((sum, c) => sum + (c.studentCount ?? 0), 0)
+  const set = (patch) => onChange({ ...value, ...patch })
+
+  return (
+    <div className="space-y-2">
+      <div className="glass-field grid grid-cols-3 gap-1 rounded-xl p-1" role="group" aria-label="Sasaran postingan">
+        {AUDIENCE_OPTIONS.map(({ value: option, label, icon: Icon }) => {
+          const active = value.audience === option
+          return (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={active}
+              disabled={disabled}
+              onClick={() => set({ audience: option })}
+              className={`flex flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-xs font-bold transition-colors sm:flex-row sm:gap-1.5 sm:text-sm ${
+                active ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-600 hover:bg-white/60'
+              }`}
+            >
+              <Icon className="size-4 shrink-0" strokeWidth={2.2} />
+              {label}
+            </button>
+          )
+        })}
+      </div>
+
+      {value.audience === 'tagged' && <TagPicker me={me} value={value} onChange={set} disabled={disabled} />}
+      {value.audience === 'classes' && (
+        <ClassPicker classrooms={list} value={value.classroomIds} onChange={(classroomIds) => set({ classroomIds })} disabled={disabled} />
+      )}
+      {value.audience === 'school' && (
+        <p className="glass-field rounded-xl p-3 text-sm text-slate-700">
+          Pengumuman untuk <b>semua orang tua</b> ({totalStudents} siswa aktif di {list.length} kelas) dan guru wali kelas.
+          Pengumuman tidak masuk portofolio siswa.
+        </p>
+      )}
+    </div>
+  )
+}
+
+function ClassPicker({ classrooms, value, onChange, disabled }) {
+  const allSelected = classrooms.length > 0 && classrooms.every((c) => value.includes(c.id))
+  const toggle = (id) => onChange(value.includes(id) ? value.filter((v) => v !== id) : [...value, id])
+  const selectedStudents = classrooms.filter((c) => value.includes(c.id)).reduce((sum, c) => sum + (c.studentCount ?? 0), 0)
+
+  return (
+    <fieldset disabled={disabled} className="glass-field space-y-2 rounded-xl p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <legend className="text-sm font-bold">Pilih kelas</legend>
+        {classrooms.length > 1 && (
+          <button
+            type="button"
+            onClick={() => onChange(allSelected ? [] : classrooms.map((c) => c.id))}
+            className="text-sm font-semibold text-brand-700 hover:underline"
+          >
+            {allSelected ? 'Batalkan semua' : 'Pilih semua kelas'}
+          </button>
+        )}
+      </div>
+      <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
+        {classrooms.map((c) => {
+          const selected = value.includes(c.id)
+          return (
+            <button
+              type="button"
+              key={c.id}
+              onClick={() => toggle(c.id)}
+              aria-pressed={selected}
+              className={`rounded-full border px-3 py-1 text-sm transition-colors ${
+                selected ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-300 bg-white/80 text-slate-700 hover:border-brand-600'
+              }`}
+            >
+              {classLabel(c)}
+              <span className={selected ? 'text-brand-100' : 'text-slate-500'}> · {c.studentCount ?? 0}</span>
+            </button>
+          )
+        })}
+      </div>
+      {classrooms.length === 0 && <p className="text-sm text-slate-500">Belum ada kelas di tahun ajaran aktif.</p>}
+      <p className="text-xs text-slate-600">
+        {value.length > 0
+          ? `Terlihat oleh orang tua ${selectedStudents} siswa di ${value.length} kelas, serta guru wali kelasnya. `
+          : 'Pilih satu atau beberapa kelas. '}
+        Pengumuman tidak masuk portofolio siswa.
+      </p>
+    </fieldset>
   )
 }
 

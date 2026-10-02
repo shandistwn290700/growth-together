@@ -4,7 +4,7 @@ import api, { getErrorMessage } from '../../lib/api.js'
 import { useMe } from '../../lib/auth.js'
 import { authorName, timeAgo, fullDate } from '../../lib/format.js'
 import { updatePost } from '../../lib/feedCache.js'
-import { SendHorizontal } from 'lucide-react'
+import { Lock, SendHorizontal } from 'lucide-react'
 import { Alert, Avatar, Select, Spinner } from '../ui.jsx'
 import GlassDialog from '../GlassDialog.jsx'
 import PostContent from './PostContent.jsx'
@@ -25,13 +25,32 @@ export default function CommentDialog({ post, onClose }) {
 
   const threads = comments.data?.threads ?? []
   const multiThread = comments.data?.students.length > 1
+  const isStaff = me.role !== 'parent'
+
+  // Pengumuman menandai banyak siswa sekaligus dan komentar orang tua bersifat pribadi per anak,
+  // jadi guru/admin cukup membalas di bawah komentar masing-masing.
+  let footer = null
+  if (comments.isSuccess && post.audience && isStaff) {
+    footer = <p className="text-center text-sm text-slate-600">Komentar orang tua bersifat pribadi. Balas di bawah komentar masing-masing.</p>
+  } else if (comments.isSuccess) {
+    footer = (
+      <>
+        {post.audience && (
+          <p className="mb-2 flex items-center justify-center gap-1.5 text-xs text-slate-600">
+            <Lock className="size-3.5" /> Komentar Anda hanya terlihat oleh guru & admin
+          </p>
+        )}
+        <CommentForm post={post} students={comments.data.students} inputId={inputId} autoFocus={autoFocus} />
+      </>
+    )
+  }
 
   return (
     <GlassDialog
       title={`Postingan ${authorName(post.author)}`}
       size="lg"
       onClose={onClose}
-      footer={comments.isSuccess && <CommentForm post={post} students={comments.data.students} inputId={inputId} autoFocus={autoFocus} />}
+      footer={footer}
     >
       <PostContent post={post} onComments={() => document.getElementById(inputId)?.focus()} />
 
@@ -39,7 +58,9 @@ export default function CommentDialog({ post, onClose }) {
         {comments.isPending && <Spinner />}
         {comments.isError && <Alert>{getErrorMessage(comments.error)}</Alert>}
         {comments.isSuccess && threads.length === 0 && (
-          <p className="py-4 text-center text-sm text-slate-600">Belum ada komentar. Jadilah yang pertama memberi semangat!</p>
+          <p className="py-4 text-center text-sm text-slate-600">
+            {post.audience ? 'Belum ada komentar.' : 'Belum ada komentar. Jadilah yang pertama memberi semangat!'}
+          </p>
         )}
         {threads.map((thread) => (
           <section key={thread.student.id} className="space-y-2">

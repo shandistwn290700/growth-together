@@ -48,7 +48,13 @@ async function serializePosts(posts, user, scope) {
   if (posts.length === 0) return [];
   const postIds = posts.map((p) => p.id);
 
-  const [reactions, commentCounts] = await Promise.all([
+  // Nama kelas sasaran pengumuman (hanya kelas yang terlihat oleh user ini).
+  const tagsByPost = new Map(posts.map((post) => [post.id, visibleTags(post, user, scope)]));
+  const announcementClassIds = new Set(
+    posts.filter((post) => post.audience !== 'tagged').flatMap((post) => tagsByPost.get(post.id).map((t) => t.classroomId)),
+  );
+
+  const [reactions, commentCounts, classrooms] = await Promise.all([
     Reaction.findAll({ where: { postId: postIds }, attributes: ['postId', 'userId', 'type'] }),
     Comment.findAll({
       where: { postId: postIds },
@@ -56,10 +62,15 @@ async function serializePosts(posts, user, scope) {
       group: ['postId', 'studentId'],
       raw: true,
     }),
+    announcementClassIds.size
+      ? Classroom.findAll({ where: { id: [...announcementClassIds] }, attributes: ['id', 'grade', 'name'] })
+      : [],
   ]);
+  const classLabel = new Map(classrooms.map((c) => [c.id, { id: c.id, label: c.label, grade: c.grade, name: c.name }]));
 
   return posts.map((post) => {
-    const tags = visibleTags(post, user, scope);
+    const tags = tagsByPost.get(post.id);
+    const isAnnouncement = post.audience !== 'tagged';
     const tagStudentIds = new Set(tags.map((t) => t.studentId));
     const commentCount = commentCounts
       .filter((c) => c.postId === post.id && tagStudentIds.has(c.studentId))
@@ -73,7 +84,18 @@ async function serializePosts(posts, user, scope) {
       author: authorDto(post.author),
       // Untuk orang tua, kelas yang ditampilkan adalah kelas anaknya sendiri.
       classroom: post.Classroom ? { id: post.Classroom.id, label: post.Classroom.label } : null,
-      students: tags.map((t) => t.Student),
+      // Pengumuman menandai banyak siswa sekaligus; daftar namanya tidak perlu dikirim.
+      students: isAnnouncement ? [] : tags.map((t) => t.Student),
+      audience: isAnnouncement
+        ? {
+            type: post.audience,
+            classes: [...new Set(tags.map((t) => t.classroomId))]
+              .map((id) => classLabel.get(id))
+              .filter(Boolean)
+              .sort((a, b) => a.grade - b.grade || a.name.localeCompare(b.name))
+              .map(({ id, label }) => ({ id, label })),
+          }
+        : null,
       totalTagged: isStaff(user) ? (post.PostStudents ?? []).length : undefined,
       media: post.media.map((m) => ({
         id: m.id,

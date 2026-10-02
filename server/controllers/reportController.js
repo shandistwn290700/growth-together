@@ -26,6 +26,7 @@ function readme(report, schoolName, failedCount) {
     `- Foto/                  : ${totals.photos} foto, dikelompokkan per kelas.`,
     '    Foto/<Kelas>/<Nama siswa>/      foto yang hanya menandai siswa tersebut',
     '    Foto/<Kelas>/_Kegiatan kelas/   foto yang menandai beberapa siswa sekaligus',
+    '    Foto/_Pengumuman/               foto pengumuman admin (kelas tertentu / seluruh sekolah)',
     '    Nama file: <tanggal>_post<nomor>_<urutan>.jpg (nomor postingan sama dengan di sheet "Postingan").',
     '',
     'Video tidak disertakan agar ukuran arsip tetap wajar; tautannya ada di sheet "Video".',
